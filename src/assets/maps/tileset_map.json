@@ -1,0 +1,14 @@
+{ "columns":8,
+ "image":"..\/wall_bricks.png",
+ "imageheight":30,
+ "imagewidth":240,
+ "margin":0,
+ "name":"tileset_map",
+ "spacing":0,
+ "tilecount":8,
+ "tiledversion":"1.8.2",
+ "tileheight":30,
+ "tilewidth":30,
+ "type":"tileset",
+ "version":"1.8"
+}
