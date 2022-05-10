@@ -38,7 +38,7 @@ export class HelloWorldScene extends Phaser.Scene {
         const tiles = dmap.addTilesetImage("tileset_map", "tileset");
         const layer_ground = dmap.createLayer("ground", tiles, 0, 0);
         const layer_wall = dmap.createLayer("wall", tiles, 0, 0);
-        // this.cameras.main.setBounds(0, 0, dmap.widthInPixels, dmap.heightInPixels);
+        this.cameras.main.setBounds(0, 0, dmap.widthInPixels, dmap.heightInPixels);
         layer_wall.setCollision(1);
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
@@ -56,12 +56,15 @@ export class HelloWorldScene extends Phaser.Scene {
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
             const bullet = this.physics.add.sprite(this.player_one.x, this.player_one.y, "bomb");
-            const velo = this.get_orient().scale(1000);
+            const velo = this.get_orient().scale(1500);
             bullet.setVelocity(velo.x, velo.y);
             bullet.setActive(true);
             bullet.setBounce(1);
-            this.physics.add.collider(this.stars, bullet);
-            this.physics.add.collider(bullet, layer_wall);
+            
+            // this.physics.add.collider(this.stars, bullet);
+            this.physics.add.collider(bullet, layer_wall, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, layer_wall: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
+                bullet.disableBody(true, true);
+            });
             // this.bullets.add(bullet, true);
             // this.bullets.setActive(true);
 
