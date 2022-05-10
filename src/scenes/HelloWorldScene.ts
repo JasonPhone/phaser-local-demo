@@ -39,7 +39,9 @@ export class HelloWorldScene extends Phaser.Scene {
         const layer_ground = dmap.createLayer("ground", tiles, 0, 0);
         const layer_wall = dmap.createLayer("wall", tiles, 0, 0);
         this.cameras.main.setBounds(0, 0, dmap.widthInPixels, dmap.heightInPixels);
-        layer_wall.setCollision(1);
+        // layer_wall.setCollision(1);
+        layer_wall.setCollisionByProperty({collides: true});
+        
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
         await this.connect();
@@ -56,7 +58,7 @@ export class HelloWorldScene extends Phaser.Scene {
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
             const bullet = this.physics.add.sprite(this.player_one.x, this.player_one.y, "bomb");
-            const velo = this.get_orient().scale(1500);
+            const velo = this.get_orient().scale(500);
             bullet.setVelocity(velo.x, velo.y);
             bullet.setActive(true);
             bullet.setBounce(1);
