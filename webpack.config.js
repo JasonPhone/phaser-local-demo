@@ -26,9 +26,10 @@ module.exports = {
             },
             {
                 test: /\.(png|svg|jpg|gif)$/,
-                use: [
-                    "file-loader"
-                ]
+                loader: "file-loader",
+                options: {
+                    name: "[name].[hash:8].[ext]"
+                }
             },
             {
                 test: /\.ts$/,

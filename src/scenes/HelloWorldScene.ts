@@ -1,11 +1,12 @@
 import Phaser, { Scenes } from "phaser";
-import assetPlayer from "../assets/adc_body.png";
-import assetStar from "../assets/star.png";
-import assetBomb from "../assets/bomb.png";
-import assetDefaultMap from "../assets/maps/map_default.json";
-import assetMapTileSet from "../assets/maps/tileset_map.json";
-import assetTileSetImg from "../assets/wall_bricks.png";
-// import Player from "~/dataobj/player";
+import pngPlayer from "../assets/adc_body.png";
+import pngStar from "../assets/star.png";
+import pngBomb from "../assets/bomb.png";
+import jsonDefaultMap from "../assets/maps/map_default.json";
+import jsonMapTileSet from "../assets/maps/tileset_map.json";
+import pngTileSetImg from "../assets/wall_bricks.png";
+import pngDude from "../assets/dude.png"
+import Player from "../obj/player";
 
 export class HelloWorldScene extends Phaser.Scene {
     private player_one: Phaser.Physics.Arcade.Sprite;
@@ -26,29 +27,37 @@ export class HelloWorldScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.image("player", assetPlayer);
-        this.load.image("star", assetStar);
-        this.load.image("bomb", assetBomb);
-        this.load.tilemapTiledJSON("map_default", assetDefaultMap);
-        this.load.image("tileset", assetTileSetImg);
+        this.load.image("player", pngPlayer);
+        this.load.image("star", pngStar);
+        this.load.image("bomb", pngBomb);
+        this.load.image("dude", pngDude);
+        this.load.tilemapTiledJSON("map_default", jsonDefaultMap);
+        this.load.image("tileset", pngTileSetImg);
     }
 
     async create() {
+        const texture = this.textures.get("player");
         const dmap = this.make.tilemap({ key: "map_default" });
         const tiles = dmap.addTilesetImage("tileset_map", "tileset");
         const layer_ground = dmap.createLayer("ground", tiles, 0, 0);
         const layer_wall = dmap.createLayer("wall", tiles, 0, 0);
         this.cameras.main.setBounds(0, 0, dmap.widthInPixels, dmap.heightInPixels);
         // layer_wall.setCollision(1);
-        layer_wall.setCollisionByProperty({collides: true});
-        
+        layer_wall.setCollisionByProperty({ collides: true });
+
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
         await this.connect();
         this.stars = this.physics.add.staticGroup();
         this.bullets = this.physics.add.group();
         this.stars.create(300, 300, "star");
-        this.player_one = this.physics.add.sprite(350, 350, "player");
+        // add a player
+        this.player_one = new Phaser.Physics.Arcade.Sprite(this, 350, 350, "player");
+        this.add_existing_GO(this.player_one, false);
+
+        // test
+        const test_player = new Player({ scene: this, x: 500, y: 500, texture: "dude" });
+
         this.player_one.setCircle(30);
         this.cameras.main.startFollow(this.player_one);
         this.player_text = this.add.text(10, 10, "player");
@@ -62,7 +71,7 @@ export class HelloWorldScene extends Phaser.Scene {
             bullet.setVelocity(velo.x, velo.y);
             bullet.setActive(true);
             bullet.setBounce(1);
-            
+
             // this.physics.add.collider(this.stars, bullet);
             this.physics.add.collider(bullet, layer_wall, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, layer_wall: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
                 bullet.disableBody(true, true);
@@ -117,5 +126,9 @@ export class HelloWorldScene extends Phaser.Scene {
         const x = this.input.activePointer.worldX - this.player_one.x;
         const y = this.input.activePointer.worldY - this.player_one.y;
         return new Phaser.Math.Vector2(x, y).normalize();
+    }
+    add_existing_GO(object: Phaser.GameObjects.GameObject, is_static: boolean) {
+        this.physics.add.existing(object, is_static); // for physics simulation
+        this.add.existing(object); // for display
     }
 };
