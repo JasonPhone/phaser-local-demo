@@ -1,4 +1,4 @@
 import Phaser  from "phaser";
-export default abstract class Bullet extends Phaser.Physics.Arcade.Sprite {
+export default abstract class BaseBullet extends Phaser.Physics.Arcade.Sprite {
     
 };
