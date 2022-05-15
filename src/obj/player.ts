@@ -54,12 +54,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     kill() {
         this.removeFromDisplayList();
         this.removeFromUpdateList();
+        this.setPosition(-100, -100);  // away from all collides
     }
-    constructor(info: {name: string, role: RoleType, team: number}, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
+    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
         const { scene, x, y, texture } = data;
         super(scene, x, y, texture);
         // this.scene is set in super()
-        const {name, role, team} = info;
+        const { name, role, team } = info;
         this.name = name;
         this.role = role;
         this.team = team;
@@ -71,6 +72,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.buff_list.length = 0;
         this.skill_CD = 0;
         this.shoot_CD = 0;
+        this.setCircle(30);  // collision
     }
     // NOTE: update should be explicitly called in scene update
     update(time: number, delta: number): void {
@@ -87,7 +89,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // rotation angle, but between angle has a difference of 90 deg, due to different start direction
         this.setRotation(player_angle + Phaser.Math.DegToRad(90));
     }
-    
+
     get_orient(): Phaser.Math.Vector2 {
         const x = this.scene.input.activePointer.worldX - this.x;
         const y = this.scene.input.activePointer.worldY - this.y;

@@ -87,15 +87,17 @@ export class GameScene extends Phaser.Scene {
             bullet.setBounce(1);
             // this.physics.add.collider(this.stars, bullet);
             this.physics.add.collider(bullet, this.map_wall, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, layer_wall: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
+                console.log("hitted wall");
                 bullet.destroy(true);
             });
             this.teams.forEach((team, index) => {
                 if (this.player_one.team != index) {
-                    console.log("added collider to team", index);
-                    this.physics.add.collider(bullet, team, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
-                        console.log("bullet hit", player.name);
+                    // use overlap to avoid bullet pushing the hitted player
+                    this.physics.add.overlap(bullet, team, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, player: Player) => {
+                        console.log("hitted player");
+                        player.kill(); 
                         bullet.destroy(true);
-                        player.setVelocity(0, 0);
+                        // player.setVelocity(0, 0);
                     });
                 }
             });
@@ -105,7 +107,6 @@ export class GameScene extends Phaser.Scene {
 
         this.add_player("jason", RoleType.ADC, 0, true);
         this.add_player("test", RoleType.NULL, 1, false);
-        this.physics.add.collider(this.bullets, this.stars);
     }
 
     async connect() {
@@ -173,7 +174,6 @@ export class GameScene extends Phaser.Scene {
             }
             this.teams[team].add(player);
             player.spawn();
-            player.setCircle(30);  // collision
             this.physics.add.collider(player, this.map_wall);
             if (is_local) {
                 this.player_one = player;
