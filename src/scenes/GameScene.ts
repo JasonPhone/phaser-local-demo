@@ -66,22 +66,11 @@ export class GameScene extends Phaser.Scene {
         this.bullets = this.physics.add.group();
         this.stars.create(500, 500, "star");
 
-        // a test player
-        // const test_player = new Player({ name: "jason", team: 0, role: RoleType.ADC }, { scene: this, x: 500, y: 500, texture: "dude" });
-        // test_player.spawn(new Phaser.Math.Vector2(600, 600));
-        // this.input.keyboard.on("keydown-K", () => {
-        //     console.log("killed");
-        //     test_player.kill();
-        // });
-        // this.input.keyboard.on("keydown-R", () => {
-        //     console.log("respawn");
-        //     test_player.spawn();
-        // });
-
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
             const bullet = this.physics.add.sprite(this.player_one.x, this.player_one.y, "bomb");
-            const velo = this.player_one.get_orient().scale(500);
+            const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
+            const velo = this.player_one.get_orient(ptx, pty).scale(500);
             bullet.setVelocity(velo.x, velo.y);
             bullet.setActive(true);
             bullet.setBounce(1);
@@ -137,6 +126,11 @@ export class GameScene extends Phaser.Scene {
         velo.scale(200);
         this.player_one.setVelocity(velo.x, velo.y);
 
+        // update the pointer position relative to the camera,
+        // in case the pointer is not moving and we get old screen position
+        this.input.activePointer.updateWorldPoint(this.cameras.main);
+        const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
+        this.player_one.rotate_to(ptx, pty);
     }
     /**
      * add a player to the scene
@@ -174,6 +168,7 @@ export class GameScene extends Phaser.Scene {
             }
             this.teams[team].add(player);
             player.spawn();
+            player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
             if (is_local) {
                 this.player_one = player;
