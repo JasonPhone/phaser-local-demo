@@ -23,6 +23,7 @@
     "webpack-dev-server": "^4.8.1"
   },
   "dependencies": {
+    "colyseus.js": "^0.14.13",
     "lodash": "^4.17.21"
   }
 }
