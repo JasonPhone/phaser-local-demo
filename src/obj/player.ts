@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { Buff, HealthBar, PlayerInfo } from "../types/common";
+import { Buff, HealthBar, RoleType } from "../types/common";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     /**
@@ -12,11 +12,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      *  skill_CD
      *  shoot_CD
      */
-    private player_info: PlayerInfo;
-    private player_health: HealthBar;
-    private buff_list: Buff[];
-    private skill_CD: number;
-    private shoot_CD: number;
+    public role: RoleType;
+    public team: number;
+    public health: HealthBar;
+    public buff_list: Buff[];
+    public skill_CD: number;
+    public shoot_CD: number;
     /**
      * behaviour:
      *  constructor
@@ -54,15 +55,18 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.removeFromDisplayList();
         this.removeFromUpdateList();
     }
-    constructor(info: PlayerInfo, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
+    constructor(info: {name: string, role: RoleType, team: number}, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
         const { scene, x, y, texture } = data;
         super(scene, x, y, texture);
         // this.scene is set in super()
-        this.player_info = info;
+        const {name, role, team} = info;
+        this.name = name;
+        this.role = role;
+        this.team = team;
         this.init_property();
     }
     init_property() {
-        this.player_health = new HealthBar();
+        this.health = new HealthBar();
         this.buff_list = new Array<Buff>();
         this.buff_list.length = 0;
         this.skill_CD = 0;
@@ -84,15 +88,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.setRotation(player_angle + Phaser.Math.DegToRad(90));
     }
     
-    get info() {
-        return this.player_info;
-    }
-    get health() {
-        return this.player_health;
-    }
-    get buffs() {
-        return this.buff_list;
-    }
     get_orient(): Phaser.Math.Vector2 {
         const x = this.scene.input.activePointer.worldX - this.x;
         const y = this.scene.input.activePointer.worldY - this.y;

@@ -1,8 +1,8 @@
-export class PlayerInfo {
-    public name: string = "";
-    public team: number = -1;
-    public role: RoleType = RoleType.NULL;
-}
+// export class PlayerInfo {
+//     public name: string = "";
+//     public team: number = -1;
+//     public role: RoleType = RoleType.NULL;
+// }
 export class HealthBar {
     private current: number = 100;
     private max_health: number = 100;
@@ -24,7 +24,7 @@ export enum RoleType {
     NULL,
     ADC,
     SUP,
-    TANK
+    TNK
 }
 export enum BuffType {
     NULL,
