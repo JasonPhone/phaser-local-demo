@@ -36,7 +36,9 @@ export class GameScene extends Phaser.Scene {
     //     space: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
     // }
     constructor() {
-        super("hello-world");
+        super({
+            key: "GameScene"
+        });
     }
 
     preload() {
@@ -84,7 +86,7 @@ export class GameScene extends Phaser.Scene {
                     // use overlap to avoid bullet pushing the hitted player
                     this.physics.add.overlap(bullet, team, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, player: Player) => {
                         console.log("hitted player");
-                        player.kill(); 
+                        player.kill();
                         bullet.destroy(true);
                         // player.setVelocity(0, 0);
                     });
