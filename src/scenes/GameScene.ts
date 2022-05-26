@@ -37,7 +37,9 @@ export class GameScene extends Phaser.Scene {
     //     space: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
     // }
     constructor() {
-        super("hello-world");
+        super({
+            key: "GameScene"
+        });
     }
 
     preload() {
