@@ -75,7 +75,6 @@ export class LoginScene extends Phaser.Scene {
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 2) { // Login Success
-                            this.removeListener('click');
                             self.scene.start("GameScene"); // zyn
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
