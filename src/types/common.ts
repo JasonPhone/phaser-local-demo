@@ -26,8 +26,23 @@ export class Buff {
 export class Command {
     playerId: string;
     key: string;
+    isDown: boolean;
     playerPositionX: number;
     playerPositionY: number;
     MousePositionX: number;
     MousePositionY: number;
 }
+
+export class KeyState {
+    left: boolean;
+    key_left: Phaser.Input.Keyboard.Key;
+    right: boolean;
+    key_right: Phaser.Input.Keyboard.Key;
+    up: boolean;
+    key_up: Phaser.Input.Keyboard.Key;
+    down: boolean;
+    key_down: Phaser.Input.Keyboard.Key;
+    space: boolean;
+    key_space: Phaser.Input.Keyboard.Key;
+}
+

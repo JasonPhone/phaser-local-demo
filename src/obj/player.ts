@@ -45,7 +45,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     }
     hitted(bullet: Bullet) {
-        console.log("hitted");
         this.health.lose(bullet.damage);
     }
     rotate_to(x: number, y: number) {

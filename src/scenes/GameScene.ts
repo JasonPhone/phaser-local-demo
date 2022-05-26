@@ -1,4 +1,9 @@
 import Phaser, { Physics, Scenes } from "phaser";
+import { KeyState, PlayerInfo, RoleType } from "../types/common";
+import Player from "../obj/Player";
+import Bullet from "../obj/Bullet";
+import ServerSocket from "../obj/ServerSocket";
+
 import pngPlayerADC from "../assets/adc_body.png";
 import pngPlayerSUP from "../assets/sup_body.png";
 import pngPlayerTNK from "../assets/tank_body.png";
@@ -8,12 +13,11 @@ import jsonDefaultMap from "../assets/maps/map_default.json";
 import jsonMapTileSet from "../assets/maps/tileset_map.json";
 import pngTileSetImg from "../assets/wall_bricks.png";
 import pngDude from "../assets/dude.png"
-import Player from "../obj/Player";
-import { PlayerInfo, RoleType } from "../types/common";
-import Bullet from "../obj/Bullet";
-import ServerSocket from "../obj/ServerSocket";
+import pngFlare from "../assets/particle/flares.png";
+import jsonFlare from "../assets/particle/flares.json";
 
 export class GameScene extends Phaser.Scene {
+    // TODO no teams! all are in one array
     private teams: Phaser.Physics.Arcade.Group[];
     private player_one: Player;
     private one_info: PlayerInfo;
@@ -28,14 +32,7 @@ export class GameScene extends Phaser.Scene {
         up: false,
         down: false,
     };
-    // TODO: just like this, but init in create()
-    // private keys = {
-    //     left: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A),
-    //     right: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D),
-    //     up: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W),
-    //     down: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S),
-    //     space: this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE),
-    // }
+    private keys: KeyState;
     constructor() {
         super({
             key: "GameScene"
@@ -51,6 +48,7 @@ export class GameScene extends Phaser.Scene {
         this.load.image("dude", pngDude);
         this.load.tilemapTiledJSON("map_default", jsonDefaultMap);
         this.load.image("tileset", pngTileSetImg);
+        this.load.atlas('flares', pngFlare, jsonFlare);
     }
 
     async create(data: PlayerInfo) {
@@ -75,16 +73,33 @@ export class GameScene extends Phaser.Scene {
 
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
+            // TODO this should be sent to server
             const bullet = new Bullet(
                 { damage: 10, source: this.player_one.name },
                 { scene: this, x: this.player_one.x, y: this.player_one.y, texture: "bomb" }
             );
             this.bullets.add(bullet, true);
             const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
-            const velo = this.player_one.get_orient(ptx, pty).scale(500);
+            const velo = this.player_one.get_orient(ptx, pty).scale(900);
             bullet.setVelocity(velo.x, velo.y);
+            // a particle emitter
+            //  Create an emitter by passing in a config object directly to the Particle Manager
+            bullet.trace = this.add.particles('flares');
+            bullet.trace.createEmitter({
+                frame: ['white'],
+                quantity: 10,
+                speedX: { min: 20, max: 50 },
+                speedY: { min: 20, max: 50 },
+                lifespan: { min: 100, max: 300 },
+                alpha: { start: 0.5, end: 0, ease: "Sine.easeIn" },
+                scale: { start: 0.065, end: 0.002 },
+                rotate: { min: -180, max: 180 },
+                angle: { min: 30, max: 110 },
+                blendMode: 'ADD',
+                frequency: 15,
+                follow: bullet
+            });
 
-            // this.physics.add.collider(this.stars, bullet);
             this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
                 console.log("hitted wall");
                 bullet.destroy(true);
@@ -93,7 +108,7 @@ export class GameScene extends Phaser.Scene {
                 if (this.player_one.team != index) {
                     // use overlap to avoid bullet pushing the hitted player
                     this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
-                        console.log("hitted player");
+                        console.log("hitted player", player.name);
                         player.hitted(bullet);
                         bullet.destroy(true);
                     });
@@ -104,26 +119,45 @@ export class GameScene extends Phaser.Scene {
 
         this.server.connect();
         this.init_with_server();
+        this.init_keys();
     }
-
+    init_keys() {
+        this.keys = new KeyState();
+        // no key is down
+        this.keys.left = false;
+        this.keys.right = false;
+        this.keys.up = false;
+        this.keys.down = false;
+        this.keys.space = false;
+        // listeners
+        this.keys.key_left = this.input.keyboard.addKey("A");
+        this.keys.key_right = this.input.keyboard.addKey("D");
+        this.keys.key_up = this.input.keyboard.addKey("W");
+        this.keys.key_down = this.input.keyboard.addKey("S");
+        this.keys.key_space = this.input.keyboard.addKey("SPACE");
+    }
     init_with_server() {
         let player_list = this.server.get_players();
         player_list.push(this.one_info);
         player_list.forEach(player => {
             this.one_info.role = player.role;
             this.one_info.team = player.team;
-            this.add_player(100, 100, player.name, player.role, player.team);
+            this.add_player(400, 400, player.name, player.role, player.team);
+            console.log(player.name, "role:", player.role, "team:", player.team);
         });
+        console.log("playerone:", this.player_one.name, "role:", this.player_one.role, "team:", this.player_one.team);
     }
 
     update(time: number, delta: number) {
         if (!this.player_one) return;
-        // this.input.keyboard.checkDown(this.keys.down);
+        if (this.keys.key_left.isDown) {
+
+        }
         this.input_payload.left = this.cursor_keys.left.isDown;
         this.input_payload.right = this.cursor_keys.right.isDown;
         this.input_payload.up = this.cursor_keys.up.isDown;
         this.input_payload.down = this.cursor_keys.down.isDown;
-        // TODO: send payload to server
+        // TODO: send event to server
 
         let velo = new Phaser.Math.Vector2(0, 0);
         if (this.input_payload.left) {

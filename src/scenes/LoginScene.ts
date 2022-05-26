@@ -85,7 +85,6 @@ export class LoginScene extends Phaser.Scene {
                             } else {
                                 role_tp = RoleType.TNK;
                             }
-                            console.log(inputUsername, 0, role_tp);
                             self.scene.start("GameScene", {name: inputUsername, team: 0, role: role_tp});
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
