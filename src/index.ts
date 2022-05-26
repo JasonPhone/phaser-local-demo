@@ -10,15 +10,18 @@ const config = {
         default: 'arcade',
         arcade: {
             gravity: { y: 0 },
-            // debug: true
+            debug: true
         }
     },
     dom: {
         createContainer: true
     },
     scene: [
-        // LoginScene, 
+        LoginScene, 
         GameScene
     ]
 };
-export default new Phaser.Game(config);
+const Game = new Phaser.Game(config);
+Game.scene.start("LoginScene");
+
+

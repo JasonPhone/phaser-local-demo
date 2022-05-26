@@ -1,7 +1,7 @@
 import Phaser from "phaser";
-import Bullet from "./bullet";
+import Bullet from "./Bullet";
 import { Buff, BuffType, RoleType } from "../types/common";
-import HealthBar from "./healthbar";
+import HealthBar from "./HealthBar";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     /**
@@ -47,7 +47,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     hitted(bullet: Bullet) {
         console.log("hitted");
         this.health.lose(bullet.damage);
-        // ... 
     }
     rotate_to(x: number, y: number) {
         const ori = this.get_orient(x, y);
@@ -94,7 +93,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.skill_CD = 0;
         this.shoot_CD = 0;
         this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.name.substring(0, 8));
-        this.name_text.setFontFamily('Arial').setFontSize(20).setColor("#00ff00").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
+        this.name_text.setFontFamily('Arial').setFontSize(20).setColor("#ffffff").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
     }
     /**
      * actions needed to be performed during time

@@ -8,19 +8,19 @@ import jsonDefaultMap from "../assets/maps/map_default.json";
 import jsonMapTileSet from "../assets/maps/tileset_map.json";
 import pngTileSetImg from "../assets/wall_bricks.png";
 import pngDude from "../assets/dude.png"
-import Player from "../obj/player";
-import { RoleType } from "../types/common";
-import Bullet from "../obj/bullet";
+import Player from "../obj/Player";
+import { PlayerInfo, RoleType } from "../types/common";
+import Bullet from "../obj/Bullet";
+import ServerSocket from "../obj/ServerSocket";
 
 export class GameScene extends Phaser.Scene {
     private teams: Phaser.Physics.Arcade.Group[];
     private player_one: Player;
+    private one_info: PlayerInfo;
     private bullets: Phaser.Physics.Arcade.Group;
-    private stars: Phaser.Physics.Arcade.StaticGroup;
     private cursor_keys: Phaser.Types.Input.Keyboard.CursorKeys;
-    private player_text: Phaser.GameObjects.Text;
-    private pointer_text: Phaser.GameObjects.Text;
     private map_wall: Phaser.Tilemaps.TilemapLayer;
+    private server: ServerSocket;
 
     private input_payload = {
         left: false,
@@ -53,7 +53,10 @@ export class GameScene extends Phaser.Scene {
         this.load.image("tileset", pngTileSetImg);
     }
 
-    async create() {
+    async create(data: PlayerInfo) {
+        this.one_info = data;
+        this.server = new ServerSocket("", "");
+
         this.physics.world.fixedStep = false;  // or the health bar will glitch
         const dmap = this.make.tilemap({ key: "map_default" });
         const tiles = dmap.addTilesetImage("tileset_map", "tileset", 30, 30, 1, 2);
@@ -68,10 +71,7 @@ export class GameScene extends Phaser.Scene {
         this.teams = new Array<Phaser.Physics.Arcade.Group>();
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
-        await this.connect();
-        this.stars = this.physics.add.staticGroup();
         this.bullets = this.physics.add.group();
-        this.stars.create(500, 500, "star");
 
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
@@ -83,7 +83,7 @@ export class GameScene extends Phaser.Scene {
             const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
             const velo = this.player_one.get_orient(ptx, pty).scale(500);
             bullet.setVelocity(velo.x, velo.y);
-            
+
             // this.physics.add.collider(this.stars, bullet);
             this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
                 console.log("hitted wall");
@@ -96,22 +96,28 @@ export class GameScene extends Phaser.Scene {
                         console.log("hitted player");
                         player.hitted(bullet);
                         bullet.destroy(true);
-                        // player.setVelocity(0, 0);
                     });
                 }
             });
             // this.bullets.setActive(true);
         });
 
-        this.add_player(400, 400, "jason", RoleType.ADC, 0, true);
-        this.add_player(400, 500, "test_ally", RoleType.SUP, 0, false);
-        this.add_player(400, 550, "test_enemy", RoleType.TNK, 1, false);
+        this.server.connect();
+        this.init_with_server();
     }
 
-    async connect() {
-
+    init_with_server() {
+        let player_list = this.server.get_players();
+        player_list.push(this.one_info);
+        player_list.forEach(player => {
+            this.one_info.role = player.role;
+            this.one_info.team = player.team;
+            this.add_player(100, 100, player.name, player.role, player.team);
+        });
     }
+
     update(time: number, delta: number) {
+        if (!this.player_one) return;
         // this.input.keyboard.checkDown(this.keys.down);
         this.input_payload.left = this.cursor_keys.left.isDown;
         this.input_payload.right = this.cursor_keys.right.isDown;
@@ -147,9 +153,8 @@ export class GameScene extends Phaser.Scene {
      * @param name player's username
      * @param role player's role
      * @param team team number
-     * @param is_local whether this player is the (only one) local player
      */
-    add_player(x: number, y: number, name: string, role: RoleType, team: number, is_local: boolean) {
+    add_player(x: number, y: number, name: string, role: RoleType, team: number) {
         if (team < 0 || team > 20) {
             console.error(`GameScene::add_player: invalid team id ${team}`);
         } else {
@@ -180,12 +185,12 @@ export class GameScene extends Phaser.Scene {
             player.spawn();
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
-            if (is_local) {
+            if (player.name === this.one_info.name) {
                 this.player_one = player;
                 this.player_one.name_text.setColor("#00ff00");
                 this.cameras.main.startFollow(this.player_one);
-            } else if (player.team === this.player_one.team) {
-                player.name_text.setColor("#5555ff");
+            } else if (player.team === this.one_info.team) {
+                player.name_text.setColor("#9999ff");
             } else {
                 player.name_text.setColor("#ff5555");
             }

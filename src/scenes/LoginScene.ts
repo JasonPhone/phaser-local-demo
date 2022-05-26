@@ -2,6 +2,7 @@ import "phaser";
 import bg from "../assets/images/citybg.png";
 import loginform from "../assets/text/loginform.html";
 import registerform from "../assets/text/registerform.html";
+import { PlayerInfo, RoleType } from "../types/common";
 import $ from "jquery";
 
 export class LoginScene extends Phaser.Scene {
@@ -75,7 +76,17 @@ export class LoginScene extends Phaser.Scene {
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 2) { // Login Success
-                            self.scene.start("GameScene");
+                            const rnd = Math.random();  // get role type randomly
+                            let role_tp = RoleType.NULL;
+                            if (rnd <= 0.3) {
+                                role_tp = RoleType.ADC;
+                            } else if (rnd <= 0.6) {
+                                role_tp = RoleType.SUP;
+                            } else {
+                                role_tp = RoleType.TNK;
+                            }
+                            console.log(inputUsername, 0, role_tp);
+                            self.scene.start("GameScene", {name: inputUsername, team: 0, role: role_tp});
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
                             alert("账号与密码不匹配，请重新输入！");

@@ -1,8 +1,8 @@
-// export class PlayerInfo {
-//     public name: string = "";
-//     public team: number = -1;
-//     public role: RoleType = RoleType.NULL;
-// }
+export class PlayerInfo {
+    public name: string = "";
+    public team: number = -1;
+    public role: RoleType = RoleType.NULL;
+}
 export enum RoleType {
     NULL,
     ADC,
@@ -21,4 +21,13 @@ export class Buff {
         this.buff_tpye = tp;
         this.base_val = val;
     }
+}
+
+export class Command {
+    playerId: string;
+    key: string;
+    playerPositionX: number;
+    playerPositionY: number;
+    MousePositionX: number;
+    MousePositionY: number;
 }
