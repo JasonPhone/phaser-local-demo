@@ -42,21 +42,21 @@ export default class HealthBar {
     draw(x: number, y: number) {
         // adjust position
         x -= 40;
-        y += 35;
+        y += 30;
 
         this.bar.clear();
         //  BG
         this.bar.fillStyle(0x000000);
-        this.bar.fillRect(x, y, 80, 16);
+        this.bar.fillRect(x, y, 80, 8);
         //  Health
         this.bar.fillStyle(0xffffff);
-        this.bar.fillRect(x + 2, y + 2, 76, 12);
+        this.bar.fillRect(x + 2, y + 2, 76, 4);
         if (this.cur_health < 30) // red
             this.bar.fillStyle(0xff0000);
         else
             this.bar.fillStyle(0x00ff00);
         var d = Math.floor(0.76 * this.cur_health);
-        this.bar.fillRect(x + 2, y + 2, d, 12);
+        this.bar.fillRect(x + 2, y + 2, d, 4);
     }
     get health() { return this.cur_health; }
     get maximum() { return this.max_health; }

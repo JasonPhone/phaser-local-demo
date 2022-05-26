@@ -75,34 +75,37 @@ export class GameScene extends Phaser.Scene {
 
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
-            const bullet = this.physics.add.sprite(this.player_one.x, this.player_one.y, "bomb");
+            const bullet = new Bullet(
+                { damage: 10, source: this.player_one.name },
+                { scene: this, x: this.player_one.x, y: this.player_one.y, texture: "bomb" }
+            );
+            this.bullets.add(bullet, true);
             const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
             const velo = this.player_one.get_orient(ptx, pty).scale(500);
             bullet.setVelocity(velo.x, velo.y);
-            bullet.setActive(true);
-            bullet.setBounce(1);
+            
             // this.physics.add.collider(this.stars, bullet);
-            this.physics.add.collider(bullet, this.map_wall, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, layer_wall: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody) => {
+            this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
                 console.log("hitted wall");
                 bullet.destroy(true);
             });
             this.teams.forEach((team, index) => {
                 if (this.player_one.team != index) {
                     // use overlap to avoid bullet pushing the hitted player
-                    this.physics.add.overlap(bullet, team, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, player: Player) => {
+                    this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
                         console.log("hitted player");
-                        player.hitted(new Bullet(this, player.x, player.y, "bomb")); 
+                        player.hitted(bullet);
                         bullet.destroy(true);
                         // player.setVelocity(0, 0);
                     });
                 }
             });
-            // this.bullets.add(bullet, true);
             // this.bullets.setActive(true);
         });
 
-        this.add_player("jason", RoleType.ADC, 0, true);
-        this.add_player("test", RoleType.TNK, 1, false);
+        this.add_player(400, 400, "jason", RoleType.ADC, 0, true);
+        this.add_player(400, 500, "test_ally", RoleType.SUP, 0, false);
+        this.add_player(400, 550, "test_enemy", RoleType.TNK, 1, false);
     }
 
     async connect() {
@@ -146,7 +149,7 @@ export class GameScene extends Phaser.Scene {
      * @param team team number
      * @param is_local whether this player is the (only one) local player
      */
-    add_player(name: string, role: RoleType, team: number, is_local: boolean) {
+    add_player(x: number, y: number, name: string, role: RoleType, team: number, is_local: boolean) {
         if (team < 0 || team > 20) {
             console.error(`GameScene::add_player: invalid team id ${team}`);
         } else {
@@ -166,7 +169,7 @@ export class GameScene extends Phaser.Scene {
                     texture = "dude";
             }
             // generate player
-            const player = new Player({ name: name, role: role, team: team }, { scene: this, x: 400, y: 400, texture: texture });
+            const player = new Player({ name: name, role: role, team: team }, { scene: this, x: x, y: y, texture: texture });
             // which team to add this player
             while (this.teams.length <= team) {
                 const tm = this.physics.add.group();
@@ -179,7 +182,12 @@ export class GameScene extends Phaser.Scene {
             this.physics.add.collider(player, this.map_wall);
             if (is_local) {
                 this.player_one = player;
+                this.player_one.name_text.setColor("#00ff00");
                 this.cameras.main.startFollow(this.player_one);
+            } else if (player.team === this.player_one.team) {
+                player.name_text.setColor("#5555ff");
+            } else {
+                player.name_text.setColor("#ff5555");
             }
         }
     }

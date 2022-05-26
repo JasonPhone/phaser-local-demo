@@ -14,7 +14,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      *  skill_CD
      *  shoot_CD
      */
-    private tm: number = 0;
     public role: RoleType;
     public team: number;
     public health: HealthBar;
@@ -22,6 +21,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     public skill_CD: number;
     public shoot_CD: number;
     public alive: boolean = false;
+    public name_text: Phaser.GameObjects.Text;
     /**
      * behaviour:
      *  constructor
@@ -46,7 +46,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     hitted(bullet: Bullet) {
         console.log("hitted");
-        this.health.lose();
+        this.health.lose(bullet.damage);
         // ... 
     }
     rotate_to(x: number, y: number) {
@@ -93,6 +93,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.buff_list.length = 0;
         this.skill_CD = 0;
         this.shoot_CD = 0;
+        this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.name.substring(0, 8));
+        this.name_text.setFontFamily('Arial').setFontSize(20).setColor("#00ff00").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
     }
     /**
      * actions needed to be performed during time
@@ -126,7 +128,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         });
         /***** render *****/
         this.health.draw(this.x, this.y);
-
+        this.name_text.setPosition(this.x - 40, this.y + 40);
 
     }
 
