@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import Bullet from "./bullet";
-import { Buff, HealthBar, RoleType } from "../types/common";
+import { Buff, BuffType, RoleType } from "../types/common";
+import HealthBar from "./healthbar";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     /**
@@ -13,12 +14,14 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      *  skill_CD
      *  shoot_CD
      */
+    private tm: number = 0;
     public role: RoleType;
     public team: number;
     public health: HealthBar;
     public buff_list: Buff[];
     public skill_CD: number;
     public shoot_CD: number;
+    public alive: boolean = false;
     /**
      * behaviour:
      *  constructor
@@ -43,6 +46,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
     hitted(bullet: Bullet) {
         console.log("hitted");
+        this.health.lose();
         // ... 
     }
     rotate_to(x: number, y: number) {
@@ -64,11 +68,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         if (pos) {
             this.setPosition(pos.x, pos.y);
         }
+        this.alive = true;
     }
     kill() {
         this.removeFromDisplayList();
         this.removeFromUpdateList();
         this.setPosition(-100, -100);  // away from all collides
+        this.alive = false;
     }
     constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
         const { scene, x, y, texture } = data;
@@ -81,17 +87,46 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.init_property();
     }
     init_property() {
-        this.health = new HealthBar();
+
+        this.health = new HealthBar(this.scene, this.x, this.y);
         this.buff_list = new Array<Buff>();
         this.buff_list.length = 0;
         this.skill_CD = 0;
         this.shoot_CD = 0;
     }
-    // NOTE: update should be explicitly called in scene update
+    /**
+     * actions needed to be performed during time
+     * NOTE: update should be explicitly called in scene update
+     * or this class should be added to a dynamic group with 
+     * runChildUpdate = true
+     * @param time 
+     * @param delta 
+     */
     update(time: number, delta: number): void {
-        // actions needed to be performed during time
+        // if (time - this.tm > 2000) {
+        //     this.tm = time;
+        //     const x = Math.random() * 400 - 200;
+        //     const y = Math.random() * 400 - 200;
+        //     this.setVelocity(x, y);
+        // }
+        /***** logic *****/
         this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
         this.skill_CD = Math.max(this.skill_CD - delta, 0);
+        let recover_buff_ratio = 1;
+        let shield_buff_ratio = 1;
+        this.buff_list.forEach(buff => {
+            if (buff.buff_tpye === BuffType.RECOVER) {
+                this.health.gain_health(buff.base_val * recover_buff_ratio);
+                recover_buff_ratio *= 0.5;
+            }
+            if (buff.buff_tpye === BuffType.SHIELD) {
+                this.health.gain_shield(buff.base_val * shield_buff_ratio);
+                shield_buff_ratio *= 0.5;
+            }
+        });
+        /***** render *****/
+        this.health.draw(this.x, this.y);
+
 
     }
 

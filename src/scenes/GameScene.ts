@@ -10,6 +10,7 @@ import pngTileSetImg from "../assets/wall_bricks.png";
 import pngDude from "../assets/dude.png"
 import Player from "../obj/player";
 import { RoleType } from "../types/common";
+import Bullet from "../obj/bullet";
 
 export class GameScene extends Phaser.Scene {
     private teams: Phaser.Physics.Arcade.Group[];
@@ -51,12 +52,16 @@ export class GameScene extends Phaser.Scene {
     }
 
     async create() {
+        this.physics.world.fixedStep = false;  // or the health bar will glitch
         const dmap = this.make.tilemap({ key: "map_default" });
-        const tiles = dmap.addTilesetImage("tileset_map", "tileset");
+        const tiles = dmap.addTilesetImage("tileset_map", "tileset", 30, 30, 1, 2);
         const layer_ground = dmap.createLayer("ground", tiles, 0, 0);
         this.map_wall = dmap.createLayer("wall", tiles, 0, 0);
         this.cameras.main.setBounds(0, 0, dmap.widthInPixels, dmap.heightInPixels);
+        this.cameras.main.roundPixels = true;
         this.map_wall.setCollisionByProperty({ collides: true });
+
+        this.cameras.main.zoom = 0.8;
 
         this.teams = new Array<Phaser.Physics.Arcade.Group>();
 
@@ -84,7 +89,7 @@ export class GameScene extends Phaser.Scene {
                     // use overlap to avoid bullet pushing the hitted player
                     this.physics.add.overlap(bullet, team, (bullet: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody, player: Player) => {
                         console.log("hitted player");
-                        player.kill(); 
+                        player.hitted(new Bullet(this, player.x, player.y, "bomb")); 
                         bullet.destroy(true);
                         // player.setVelocity(0, 0);
                     });
@@ -95,7 +100,7 @@ export class GameScene extends Phaser.Scene {
         });
 
         this.add_player("jason", RoleType.ADC, 0, true);
-        this.add_player("test", RoleType.NULL, 1, false);
+        this.add_player("test", RoleType.TNK, 1, false);
     }
 
     async connect() {

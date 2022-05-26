@@ -37,12 +37,12 @@
          "columns":8,
          "firstgid":1,
          "image":"..\/wall_bricks.png",
-         "imageheight":30,
-         "imagewidth":240,
-         "margin":0,
+         "imageheight":32,
+         "imagewidth":256,
+         "margin":1,
          "name":"tileset_map",
-         "spacing":0,
-         "tilecount":8,
+         "spacing":2,
+         "tilecount":9,
          "tileheight":30,
          "tiles":[
                 {
