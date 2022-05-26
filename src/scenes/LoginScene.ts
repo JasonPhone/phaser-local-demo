@@ -47,7 +47,7 @@ export class LoginScene extends Phaser.Scene {
             if (event.target.name === 'loginButton') {
                 var inputUsername = this.getChildByName('username').value;
                 var inputPassword = this.getChildByName('password').value;
-
+                const loginSelf = this;
                 var zg = /^[0-9a-zA-Z]*$/; // to check if str is made of numbers and letters
 
                 if (inputUsername == '' || inputPassword == '') {
@@ -71,20 +71,20 @@ export class LoginScene extends Phaser.Scene {
                     url: "http://81.68.250.183:2567/user/login",
                     async: true,
                     dataType: "json",
-                    jsonpCallback: "successCallback", // zyn
+                    // jsonpCallback: "successCallback", // zyn
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 2) { // Login Success
-                            self.scene.start("GameScene"); // zyn
+                            self.scene.start("GameScene");
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
                             alert("账号与密码不匹配，请重新输入！");
-                            this.getChildByName('username').value = '';
-                            this.getChildByName('password').value = '';
+                            loginSelf.getChildByName('username').value = '';
+                            loginSelf.getChildByName('password').value = '';
                         } else if (result.status == 0) { // Login Name Not Exist
                             alert("账号不存在，请检查！");
-                            this.getChildByName('username').value = '';
-                            this.getChildByName('password').value = '';
+                            loginSelf.getChildByName('username').value = '';
+                            loginSelf.getChildByName('password').value = '';
                         } else {
                             alert("对不起，请求出错！");
                         }
@@ -117,6 +117,7 @@ export class LoginScene extends Phaser.Scene {
                 var inputUsername = this.getChildByName('username').value;
                 var inputPassword = this.getChildByName('password').value;
                 var inputConfirmPassword = this.getChildByName('confirmPassword').value;
+                const registerSelf = this;
 
                 var zg = /^[0-9a-zA-Z]*$/; // to check if str is made of numbers and letters
 
@@ -150,22 +151,22 @@ export class LoginScene extends Phaser.Scene {
                     url: "http://81.68.250.183:2567/user/register",
                     async: true,
                     dataType: "json",
-                    jsonpCallback: "successCallback", // zyn
+                    // jsonpCallback: "successCallback", // zyn
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 0) { // Register Success
                             alert("账号注册成功！");
                             registerformElement.setVisible(false);
                             loginformElement.setVisible(true);
-                            this.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 3000, ease: 'Power3' });
+                            registerSelf.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 3000, ease: 'Power3' });
                             startText.setText('Please Login to Play');
-                            this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
+                            registerSelf.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
                             return;
                         } else if (result.status == 1) { // Register Name Existed
                             alert("账号已注册，请重新输入！");
-                            this.getChildByName('username').value = '';
-                            this.getChildByName('password').value = '';
-                            this.getChildByName('inputConfirmPassword').value = '';
+                            registerSelf.getChildByName('username').value = '';
+                            registerSelf.getChildByName('password').value = '';
+                            registerSelf.getChildByName('confirmPassword').value = '';
                         } else {
                             alert("对不起，请求出错！");
                         }
