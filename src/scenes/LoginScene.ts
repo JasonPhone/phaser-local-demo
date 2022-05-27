@@ -39,7 +39,7 @@ export class LoginScene extends Phaser.Scene {
             if (event.target.name === 'toRegister') {
                 loginformElement.setVisible(false);
                 registerformElement.setVisible(true);
-                this.scene.tweens.add({ targets: registerformElement.rotate3d, x: 1, w: 360, duration: 3000, ease: 'Power3' });
+                this.scene.tweens.add({ targets: registerformElement.rotate3d, x: 1, w: 360, duration: 1200, ease: 'Power3' });
                 startText.setText('Please Register to Play');
                 this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
             }
@@ -117,7 +117,7 @@ export class LoginScene extends Phaser.Scene {
             if (event.target.name === 'toLogin') {
                 registerformElement.setVisible(false);
                 loginformElement.setVisible(true);
-                this.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 3000, ease: 'Power3' });
+                this.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 1200, ease: 'Power3' });
                 startText.setText('Please Login to Play');
                 this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
             }
@@ -168,7 +168,7 @@ export class LoginScene extends Phaser.Scene {
                             alert("账号注册成功！");
                             registerformElement.setVisible(false);
                             loginformElement.setVisible(true);
-                            registerSelf.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 3000, ease: 'Power3' });
+                            registerSelf.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 1200, ease: 'Power3' });
                             startText.setText('Please Login to Play');
                             registerSelf.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
                             return;
@@ -193,7 +193,7 @@ export class LoginScene extends Phaser.Scene {
         this.tweens.add({
             targets: loginformElement,
             y: 300,
-            duration: 3000,
+            duration: 1500,
             ease: 'Power3'
         });
     }
