@@ -44,6 +44,7 @@ export default class ServerSocket {
     }
     send_msg(type: string, msg: Command) {
         // this.room_.send(type, msg);
+        console.log("MSG", type);
     }
 
     get client() { return this.client_; }

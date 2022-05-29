@@ -32,6 +32,12 @@ export class Command {
     MousePositionX: number;
     MousePositionY: number;
 }
+export enum CommandType {
+    KEYEVENT= "keyevent",
+    PTREVENT= "pointerevent",
+    SPWAN = "spawn",
+    KILL = "kill"
+}
 
 export class KeyState {
     left: boolean;
