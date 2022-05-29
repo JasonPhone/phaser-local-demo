@@ -110,7 +110,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         //     this.setVelocity(x, y);
         // }
         /***** logic *****/
-        this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
+        // this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
         this.skill_CD = Math.max(this.skill_CD - delta, 0);
         let recover_buff_ratio = 1;
         let shield_buff_ratio = 1;
@@ -124,6 +124,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 shield_buff_ratio *= 0.5;
             }
         });
+        if (this.health.health <= 0) this.kill();
         /***** render *****/
         this.health.draw(this.x, this.y);
         this.name_text.setPosition(this.x - 40, this.y + 40);

@@ -25,6 +25,7 @@ export class GameScene extends Phaser.Scene {
     private cursor_keys: Phaser.Types.Input.Keyboard.CursorKeys;
     private map_wall: Phaser.Tilemaps.TilemapLayer;
     private server: ServerSocket;
+    private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
 
     private input_payload = {
         left: false,
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
 
     async create(data: PlayerInfo) {
         this.one_info = data;
+        console.log(this.one_info);
         this.server = new ServerSocket("", "");
 
         this.physics.world.fixedStep = false;  // or the health bar will glitch
@@ -65,6 +67,7 @@ export class GameScene extends Phaser.Scene {
         this.map_wall.setCollisionByProperty({ collides: true });
 
         this.cameras.main.zoom = 0.8;
+        this.praticle_mngr = this.add.particles("flares");
 
         this.teams = new Array<Phaser.Physics.Arcade.Group>();
 
@@ -74,34 +77,31 @@ export class GameScene extends Phaser.Scene {
         this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
             // fire
             // TODO this should be sent to server
+            const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
+            const velo = this.player_one.get_orient(ptx, pty).scale(800);
+            const pos = this.player_one.get_orient(ptx, pty).scale(30);
             const bullet = new Bullet(
                 { damage: 10, source: this.player_one.name },
-                { scene: this, x: this.player_one.x, y: this.player_one.y, texture: "bomb" }
+                { scene: this, x: this.player_one.x + pos.x, y: this.player_one.y + pos.y, texture: "bomb" }
             );
             this.bullets.add(bullet, true);
-            const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
-            const velo = this.player_one.get_orient(ptx, pty).scale(900);
             bullet.setVelocity(velo.x, velo.y);
+            bullet.create_particle(this.add.particles('flares'));
             // a particle emitter
             //  Create an emitter by passing in a config object directly to the Particle Manager
-            bullet.trace = this.add.particles('flares');
-            bullet.trace.createEmitter({
-                frame: ['white'],
-                quantity: 10,
-                speedX: { min: 20, max: 50 },
-                speedY: { min: 20, max: 50 },
-                lifespan: { min: 100, max: 300 },
-                alpha: { start: 0.5, end: 0, ease: "Sine.easeIn" },
-                scale: { start: 0.065, end: 0.002 },
-                rotate: { min: -180, max: 180 },
-                angle: { min: 30, max: 110 },
-                blendMode: 'ADD',
-                frequency: 15,
-                follow: bullet
-            });
 
             this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
                 console.log("hitted wall");
+                // a explode vfx
+                let emitter = this.praticle_mngr.createEmitter({
+                    frame: ["white", "red"],
+                    speed: { min: -800, max: 800 },
+                    angle: { min: 0, max: 360 },
+                    scale: { start: 0.4, end: 0.1 },
+                    blendMode: 'SCREEN',
+                    lifespan: bullet.damage <= 10 ? 100 : 200,
+                });
+                emitter.explode(bullet.damage, bullet.x, bullet.y);
                 bullet.destroy(true);
             });
             this.teams.forEach((team, index) => {
@@ -109,6 +109,16 @@ export class GameScene extends Phaser.Scene {
                     // use overlap to avoid bullet pushing the hitted player
                     this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
                         console.log("hitted player", player.name);
+                        // a explode vfx
+                        let emitter = this.praticle_mngr.createEmitter({
+                            frame: ["white", "red"],
+                            speed: { min: -800, max: 800 },
+                            angle: { min: 0, max: 360 },
+                            scale: { start: 0.4, end: 0.1 },
+                            blendMode: 'SCREEN',
+                            lifespan: bullet.damage <= 10 ? 100 : 200,
+                        });
+                        emitter.explode(bullet.damage, bullet.x, bullet.y);
                         player.hitted(bullet);
                         bullet.destroy(true);
                     });
@@ -140,8 +150,10 @@ export class GameScene extends Phaser.Scene {
         let player_list = this.server.get_players();
         player_list.push(this.one_info);
         player_list.forEach(player => {
-            this.one_info.role = player.role;
-            this.one_info.team = player.team;
+            if (player.name === this.one_info.name) {
+                this.one_info.role = player.role;
+                this.one_info.team = player.team;
+            }
             this.add_player(400, 400, player.name, player.role, player.team);
             console.log(player.name, "role:", player.role, "team:", player.team);
         });
@@ -216,6 +228,7 @@ export class GameScene extends Phaser.Scene {
                 this.teams.push(tm);
             }
             this.teams[team].add(player);
+            console.log("player", player.name, "in team", team, "real team", player.team);
             player.spawn();
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
