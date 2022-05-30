@@ -1,5 +1,5 @@
 import Phaser, { Physics, Scenes } from "phaser";
-import { KeyState, PlayerInfo, RoleType } from "../types/common";
+import { KeyState, PlayerInfo, RoleType, CommandType, Command } from "../types/common";
 import Player from "../obj/Player";
 import Bullet from "../obj/Bullet";
 import ServerSocket from "../obj/ServerSocket";
@@ -25,6 +25,7 @@ export class GameScene extends Phaser.Scene {
     private cursor_keys: Phaser.Types.Input.Keyboard.CursorKeys;
     private map_wall: Phaser.Tilemaps.TilemapLayer;
     private server: ServerSocket;
+    private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
 
     private input_payload = {
         left: false,
@@ -53,6 +54,7 @@ export class GameScene extends Phaser.Scene {
 
     async create(data: PlayerInfo) {
         this.one_info = data;
+        console.log(this.one_info);
         this.server = new ServerSocket("", "");
 
         this.physics.world.fixedStep = false;  // or the health bar will glitch
@@ -65,58 +67,14 @@ export class GameScene extends Phaser.Scene {
         this.map_wall.setCollisionByProperty({ collides: true });
 
         this.cameras.main.zoom = 0.8;
+        this.praticle_mngr = this.add.particles("flares");
 
         this.teams = new Array<Phaser.Physics.Arcade.Group>();
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
         this.bullets = this.physics.add.group();
 
-        this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-            // fire
-            // TODO this should be sent to server
-            const bullet = new Bullet(
-                { damage: 10, source: this.player_one.name },
-                { scene: this, x: this.player_one.x, y: this.player_one.y, texture: "bomb" }
-            );
-            this.bullets.add(bullet, true);
-            const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
-            const velo = this.player_one.get_orient(ptx, pty).scale(900);
-            bullet.setVelocity(velo.x, velo.y);
-            // a particle emitter
-            //  Create an emitter by passing in a config object directly to the Particle Manager
-            bullet.trace = this.add.particles('flares');
-            bullet.trace.createEmitter({
-                frame: ['white'],
-                quantity: 10,
-                speedX: { min: 20, max: 50 },
-                speedY: { min: 20, max: 50 },
-                lifespan: { min: 100, max: 300 },
-                alpha: { start: 0.5, end: 0, ease: "Sine.easeIn" },
-                scale: { start: 0.065, end: 0.002 },
-                rotate: { min: -180, max: 180 },
-                angle: { min: 30, max: 110 },
-                blendMode: 'ADD',
-                frequency: 15,
-                follow: bullet
-            });
-
-            this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
-                console.log("hitted wall");
-                bullet.destroy(true);
-            });
-            this.teams.forEach((team, index) => {
-                if (this.player_one.team != index) {
-                    // use overlap to avoid bullet pushing the hitted player
-                    this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
-                        console.log("hitted player", player.name);
-                        player.hitted(bullet);
-                        bullet.destroy(true);
-                    });
-                }
-            });
-            // this.bullets.setActive(true);
-        });
-
+        this.input.on("pointerdown", this.shoot_event, this);
         this.server.connect();
         this.init_with_server();
         this.init_keys();
@@ -140,8 +98,10 @@ export class GameScene extends Phaser.Scene {
         let player_list = this.server.get_players();
         player_list.push(this.one_info);
         player_list.forEach(player => {
-            this.one_info.role = player.role;
-            this.one_info.team = player.team;
+            if (player.name === this.one_info.name) {
+                this.one_info.role = player.role;
+                this.one_info.team = player.team;
+            }
             this.add_player(400, 400, player.name, player.role, player.team);
             console.log(player.name, "role:", player.role, "team:", player.team);
         });
@@ -149,38 +109,87 @@ export class GameScene extends Phaser.Scene {
     }
 
     update(time: number, delta: number) {
-        if (!this.player_one) return;
-        if (this.keys.key_left.isDown) {
-
+        if (!this.player_one || this.player_one.alive === false) return;
+        if (this.player_one.health.health <= 0) {
+            // this player died
+            this.send_msg(CommandType.KILL);
+            this.cameras.main.stopFollow();
+            return;
         }
-        this.input_payload.left = this.cursor_keys.left.isDown;
-        this.input_payload.right = this.cursor_keys.right.isDown;
-        this.input_payload.up = this.cursor_keys.up.isDown;
-        this.input_payload.down = this.cursor_keys.down.isDown;
-        // TODO: send event to server
-
+        this.input.activePointer.updateWorldPoint(this.cameras.main);
+        // keys event
+        // left
+        if (this.keys.key_left.isDown) {
+            if (this.keys.left === false)
+                this.send_msg(CommandType.KEYEVENT, "A", true);
+            this.keys.left = true;
+        } else {
+            if (this.keys.left === true)
+                this.send_msg(CommandType.KEYEVENT, "A", false);
+            this.keys.left = false;
+        }
+        // right
+        if (this.keys.key_right.isDown) {
+            if (this.keys.right === false)
+                this.send_msg(CommandType.KEYEVENT, "D", true);
+            this.keys.right = true;
+        } else {
+            if (this.keys.right === true)
+                this.send_msg(CommandType.KEYEVENT, "D", false);
+            this.keys.right = false;
+        }
+        // up
+        if (this.keys.key_up.isDown) {
+            if (this.keys.up === false)
+                this.send_msg(CommandType.KEYEVENT, "W", true);
+            this.keys.up = true;
+        } else {
+            if (this.keys.up === true)
+                this.send_msg(CommandType.KEYEVENT, "W", false);
+            this.keys.up = false;
+        }
+        // down
+        if (this.keys.key_down.isDown) {
+            if (this.keys.down === false)
+                this.send_msg(CommandType.KEYEVENT, "S", true);
+            this.keys.down = true;
+        } else {
+            if (this.keys.down === true)
+                this.send_msg(CommandType.KEYEVENT, "S", false);
+            this.keys.down = false;
+        }
+        // space(skill), does not need "up or down"
+        if (this.keys.key_space.isDown) {
+            this.keys.space = true;
+        } else {
+            this.keys.space = false;
+        }
+        // movement 
         let velo = new Phaser.Math.Vector2(0, 0);
-        if (this.input_payload.left) {
+        if (this.keys.left) {
             velo.x -= 1;
         }
-        if (this.input_payload.right) {
+        if (this.keys.right) {
             velo.x += 1;
         }
-        if (this.input_payload.up) {
+        if (this.keys.up) {
             velo.y -= 1;
         }
-        if (this.input_payload.down) {
+        if (this.keys.down) {
             velo.y += 1;
         }
         velo.normalize(); // all-direction same speed
         velo.scale(200);
         this.player_one.setVelocity(velo.x, velo.y);
-
         // update the pointer position relative to the camera,
         // in case the pointer is not moving and we get old screen position
-        this.input.activePointer.updateWorldPoint(this.cameras.main);
         const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
         this.player_one.rotate_to(ptx, pty);
+        // skill
+        if (this.keys.space) {
+            this.player_one.skill();
+        }
+        // ...
     }
     /**
      * add a player to the scene
@@ -216,6 +225,7 @@ export class GameScene extends Phaser.Scene {
                 this.teams.push(tm);
             }
             this.teams[team].add(player);
+            console.log("player", player.name, "in team", team, "real team", player.team);
             player.spawn();
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
@@ -230,4 +240,104 @@ export class GameScene extends Phaser.Scene {
             }
         }
     }
+    send_msg(tp: CommandType, key?: string, isDn?: boolean) {
+        this.input.activePointer.updateWorldPoint(this.cameras.main);
+        if (tp === CommandType.KEYEVENT) {
+            if (key) {
+                this.server.send_msg(tp, {
+                    playerId: this.player_one.name,
+                    key: key,
+                    isDown: isDn,
+                    playerPositionX: this.player_one.x,
+                    playerPositionY: this.player_one.y,
+                    MousePositionX: this.input.activePointer.worldX,
+                    MousePositionY: this.input.activePointer.worldY
+                });
+            } else {
+                console.error("send key command without key");
+            }
+        } else if (tp === CommandType.PTREVENT) {
+            this.server.send_msg(tp, {
+                playerId: this.player_one.name,
+                key: "NULL",
+                isDown: false,
+                playerPositionX: this.player_one.x,
+                playerPositionY: this.player_one.y,
+                MousePositionX: this.input.activePointer.worldX,
+                MousePositionY: this.input.activePointer.worldY
+            });
+        } else if (tp === CommandType.SPWAN) {
+            this.server.send_msg(tp, {
+                playerId: this.player_one.name,
+                key: "NULL",
+                isDown: false,
+                playerPositionX: this.player_one.x,
+                playerPositionY: this.player_one.y,
+                MousePositionX: this.input.activePointer.worldX,
+                MousePositionY: this.input.activePointer.worldY
+            });
+        } else if (tp === CommandType.KILL) {
+            this.server.send_msg(tp, {
+                playerId: this.player_one.name,
+                key: "NULL",
+                isDown: false,
+                playerPositionX: this.player_one.x,
+                playerPositionY: this.player_one.y,
+                MousePositionX: this.input.activePointer.worldX,
+                MousePositionY: this.input.activePointer.worldY
+            });
+        } else {
+            console.error("unknown command type", tp);
+        }
+    }
+    shoot_event(pointer: Phaser.Input.Pointer) {
+        // generate bullet
+        const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
+        const velo = this.player_one.get_orient(ptx, pty).scale(800);
+        const pos = this.player_one.get_orient(ptx, pty).scale(30);
+        const bullet = this.player_one.shoot(this.player_one.x + pos.x, this.player_one.y + pos.y);
+        // test shoot CD
+        if (!bullet) return;
+        // send command
+        this.send_msg(CommandType.PTREVENT, "LEFT", true);
+        this.bullets.add(bullet, true);
+        bullet.setVelocity(velo.x, velo.y);
+        bullet.create_particle(this.add.particles('flares'));
+        // a particle emitter
+        this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
+            console.log("hitted wall");
+            // a explode vfx
+            let emitter = this.praticle_mngr.createEmitter({
+                frame: ["white", "red"],
+                speed: { min: -800, max: 800 },
+                angle: { min: 0, max: 360 },
+                scale: { start: 0.4, end: 0.1 },
+                blendMode: 'SCREEN',
+                lifespan: bullet.damage <= 10 ? 100 : 200,
+            });
+            emitter.explode(bullet.damage, bullet.x, bullet.y);
+            bullet.destroy(true);
+        });
+        this.teams.forEach((team, index) => {
+            if (this.player_one.team != index) {
+                // use overlap to avoid bullet pushing the hitted player
+                this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
+                    console.log("hitted player", player.name);
+                    // a explode vfx
+                    let emitter = this.praticle_mngr.createEmitter({
+                        frame: ["white", "red"],
+                        speed: { min: -800, max: 800 },
+                        angle: { min: 0, max: 360 },
+                        scale: { start: 0.4, end: 0.1 },
+                        blendMode: 'SCREEN',
+                        lifespan: bullet.damage <= 10 ? 100 : 200,
+                    });
+                    emitter.explode(bullet.damage, bullet.x, bullet.y);
+                    player.hitted(bullet);
+                    bullet.destroy(true);
+                });
+            }
+        });
+    }
+
 };

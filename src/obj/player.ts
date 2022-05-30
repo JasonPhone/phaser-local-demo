@@ -17,7 +17,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     public role: RoleType;
     public team: number;
     public health: HealthBar;
-    public buff_list: Buff[];
+    public buff_health: number = 0;
+    public buff_shield: number = 0;
     public skill_CD: number;
     public shoot_CD: number;
     public alive: boolean = false;
@@ -31,17 +32,25 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      *  void spawn(Vector2)
      *  void kill()
      */
-    shoot(dir: Phaser.Math.Vector2) {
-        // return a NormalBullet instance
-        if (this.shoot_CD > 0) return;
-        console.log("shoot a bullet");
-        this.shoot_CD = 0.5;
+    shoot(posx: number, posy: number) {
+        if (this.shoot_CD > 0) return null;
+        this.shoot_CD = 0.25 * 1000;
+        const blt = new Bullet({damage: 20, player: this.name, team: this.team}, 
+            {scene: this.scene, x: posx, y: posy, texture: "bomb"});
+        return blt;
     }
-    skill(pos: Phaser.Math.Vector2, target: Player) {
+    skill(shoot?: Function) {
         if (this.skill_CD > 0) return;
         console.log("use a skill");
-        this.skill_CD = 10;
+        this.skill_CD = 10 * 1000;
         // https://phaser.io/examples/v3/view/physics/arcade/get-bodies-within-circle
+        if (this.role === RoleType.TNK) {
+            this.health.gain_shield(20);
+        } else if (this.role === RoleType.SUP) {
+            // a circle where teammates can gain health
+        } else if (this.role === RoleType.ADC) {
+            // shoot a huge bullet
+        }
 
     }
     hitted(bullet: Bullet) {
@@ -87,8 +96,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     init_property() {
 
         this.health = new HealthBar(this.scene, this.x, this.y);
-        this.buff_list = new Array<Buff>();
-        this.buff_list.length = 0;
         this.skill_CD = 0;
         this.shoot_CD = 0;
         this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.name.substring(0, 8));
@@ -110,20 +117,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         //     this.setVelocity(x, y);
         // }
         /***** logic *****/
-        this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
         this.skill_CD = Math.max(this.skill_CD - delta, 0);
-        let recover_buff_ratio = 1;
-        let shield_buff_ratio = 1;
-        this.buff_list.forEach(buff => {
-            if (buff.buff_tpye === BuffType.RECOVER) {
-                this.health.gain_health(buff.base_val * recover_buff_ratio);
-                recover_buff_ratio *= 0.5;
-            }
-            if (buff.buff_tpye === BuffType.SHIELD) {
-                this.health.gain_shield(buff.base_val * shield_buff_ratio);
-                shield_buff_ratio *= 0.5;
-            }
-        });
+        this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
+        let recover_buff = 1 - Math.pow(0.5, this.buff_health);
+        recover_buff *= 10 * delta / 1000; // 10 point health per second 
+        let shield_buff = 1 - Math.pow(0.5, this.buff_shield);
+        shield_buff *= 10; // 10 point for first shield
+        this.health.gain_shield(shield_buff);
+        this.buff_shield = 0; // clear at once
+
+        if (this.health.health <= 0) this.kill();
         /***** render *****/
         this.health.draw(this.x, this.y);
         this.name_text.setPosition(this.x - 40, this.y + 40);
