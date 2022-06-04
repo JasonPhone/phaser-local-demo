@@ -17,7 +17,6 @@ import pngFlare from "../assets/particle/flares.png";
 import jsonFlare from "../assets/particle/flares.json";
 
 export class GameScene extends Phaser.Scene {
-    // TODO no teams! all are in one array
     private teams: Phaser.Physics.Arcade.Group[];
     private player_one: Player;
     private one_info: PlayerInfo;
@@ -97,15 +96,15 @@ export class GameScene extends Phaser.Scene {
     init_with_server() {
         let player_list = this.server.get_players();
         player_list.push(this.one_info);
-        player_list.forEach(player => {
-            if (player.name === this.one_info.name) {
-                this.one_info.role = player.role;
-                this.one_info.team = player.team;
+        player_list.forEach(player_entry => {
+            if (player_entry.name === this.one_info.name) {
+                this.one_info.role = player_entry.role;
+                this.one_info.team = player_entry.team;
             }
-            this.add_player(400, 400, player.name, player.role, player.team);
-            console.log(player.name, "role:", player.role, "team:", player.team);
+            this.add_player(400, 400, player_entry.name, player_entry.role, player_entry.team);
+            console.log(player_entry.name, "role:", player_entry.role, "team:", player_entry.team);
         });
-        console.log("playerone:", this.player_one.name, "role:", this.player_one.role, "team:", this.player_one.team);
+        console.log("playerone:", this.player_one.info.name, "role:", this.player_one.info.role, "team:", this.player_one.info.team);
     }
 
     update(time: number, delta: number) {
@@ -225,15 +224,15 @@ export class GameScene extends Phaser.Scene {
                 this.teams.push(tm);
             }
             this.teams[team].add(player);
-            console.log("player", player.name, "in team", team, "real team", player.team);
+            console.log("player", player.info.name, "in team", team, "real team", player.info.team);
             player.spawn();
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
-            if (player.name === this.one_info.name) {
+            if (player.info.name === this.one_info.name) {
                 this.player_one = player;
                 this.player_one.name_text.setColor("#00ff00");
                 this.cameras.main.startFollow(this.player_one);
-            } else if (player.team === this.one_info.team) {
+            } else if (player.info.team === this.one_info.team) {
                 player.name_text.setColor("#9999ff");
             } else {
                 player.name_text.setColor("#ff5555");
@@ -319,10 +318,10 @@ export class GameScene extends Phaser.Scene {
             bullet.destroy(true);
         });
         this.teams.forEach((team, index) => {
-            if (this.player_one.team != index) {
+            if (this.player_one.info.team != index) {
                 // use overlap to avoid bullet pushing the hitted player
                 this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
-                    console.log("hitted player", player.name);
+                    console.log("hitted player", player.info.name);
                     // a explode vfx
                     let emitter = this.praticle_mngr.createEmitter({
                         frame: ["white", "red"],

@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import Bullet from "./Bullet";
-import { Buff, BuffType, RoleType } from "../types/common";
+import { Buff, BuffType, PlayerInfo, RoleType } from "../types/common";
 import HealthBar from "./HealthBar";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
@@ -14,8 +14,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      *  skill_CD
      *  shoot_CD
      */
-    public role: RoleType;
-    public team: number;
+    public info: PlayerInfo;
     public health: HealthBar;
     public buff_health: number = 0;
     public buff_shield: number = 0;
@@ -35,7 +34,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     shoot(posx: number, posy: number) {
         if (this.shoot_CD > 0) return null;
         this.shoot_CD = 0.25 * 1000;
-        const blt = new Bullet({damage: 20, player: this.name, team: this.team}, 
+        const blt = new Bullet({damage: 20, player: this.info.name, team: this.info.team}, 
             {scene: this.scene, x: posx, y: posy, texture: "bomb"});
         return blt;
     }
@@ -44,11 +43,11 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         console.log("use a skill");
         this.skill_CD = 10 * 1000;
         // https://phaser.io/examples/v3/view/physics/arcade/get-bodies-within-circle
-        if (this.role === RoleType.TNK) {
+        if (this.info.role === RoleType.TNK) {
             this.health.gain_shield(20);
-        } else if (this.role === RoleType.SUP) {
+        } else if (this.info.role === RoleType.SUP) {
             // a circle where teammates can gain health
-        } else if (this.role === RoleType.ADC) {
+        } else if (this.info.role === RoleType.ADC) {
             // shoot a huge bullet
         }
 
@@ -87,10 +86,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         const { scene, x, y, texture } = data;
         super(scene, x, y, texture);
         // this.scene is set in super()
-        const { name, role, team } = info;
-        this.name = name;
-        this.role = role;
-        this.team = team;
+        this.info = info;
         this.init_property();
     }
     init_property() {
