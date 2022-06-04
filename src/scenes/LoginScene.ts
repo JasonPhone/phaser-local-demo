@@ -72,7 +72,6 @@ export class LoginScene extends Phaser.Scene {
                     url: "http://81.68.250.183:2567/user/login",
                     async: true,
                     dataType: "json",
-                    // jsonpCallback: "successCallback", // zyn
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 2) { // Login Success
@@ -85,7 +84,7 @@ export class LoginScene extends Phaser.Scene {
                             } else {
                                 role_tp = RoleType.TNK;
                             }
-                            self.scene.start("GameScene", {name: inputUsername, team: 0, role: role_tp});
+                            self.scene.start("GameScene", { name: inputUsername, team: 0, role: role_tp });
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
                             alert("账号与密码不匹配，请重新输入！");
@@ -161,7 +160,6 @@ export class LoginScene extends Phaser.Scene {
                     url: "http://81.68.250.183:2567/user/register",
                     async: true,
                     dataType: "json",
-                    // jsonpCallback: "successCallback", // zyn
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 0) { // Register Success
