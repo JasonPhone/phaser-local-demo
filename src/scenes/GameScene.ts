@@ -51,11 +51,23 @@ export class GameScene extends Phaser.Scene {
         this.load.atlas('flares', pngFlare, jsonFlare);
     }
 
-    async create(data: PlayerInfo) {
-        this.one_info = data;
-        console.log(this.one_info);
-        this.server = new ServerSocket("", "");
-
+    async create(info: PlayerInfo, server: ServerSocket) {
+        this.one_info = info;
+        // console.log(this.one_info);
+        /****** server messages ******/
+        this.server = server;
+        await this.server.connect();
+        // this.server.room.onMessage(this.ty, (message: Command) => {
+        //     console.log("received msg", message);
+        //     console.log(message.key);
+        // });
+        this.server.room.onStateChange.once((state: any) => {
+            console.log("state first init", state);
+        })
+        this.server.room.onStateChange.once((state: any) => {
+            console.log("state follow update", state);
+        })
+        /****** visual ******/
         this.physics.world.fixedStep = false;  // or the health bar will glitch
         const dmap = this.make.tilemap({ key: "map_default" });
         const tiles = dmap.addTilesetImage("tileset_map", "tileset", 30, 30, 1, 2);
@@ -68,6 +80,7 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.zoom = 0.8;
         this.praticle_mngr = this.add.particles("flares");
 
+        /****** logic ******/
         this.teams = new Array<Phaser.Physics.Arcade.Group>();
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
@@ -178,7 +191,6 @@ export class GameScene extends Phaser.Scene {
             velo.y += 1;
         }
         velo.normalize(); // all-direction same speed
-        velo.scale(200);
         this.player_one.setVelocity(velo.x, velo.y);
         // update the pointer position relative to the camera,
         // in case the pointer is not moving and we get old screen position
@@ -186,7 +198,7 @@ export class GameScene extends Phaser.Scene {
         this.player_one.rotate_to(ptx, pty);
         // skill
         if (this.keys.space) {
-            this.player_one.skill();
+            this.player_one.skill(this.input.activePointer);
         }
         // ...
     }
@@ -216,7 +228,9 @@ export class GameScene extends Phaser.Scene {
                     texture = "dude";
             }
             // generate player
-            const player = new Player({ name: name, role: role, team: team }, { scene: this, x: x, y: y, texture: texture });
+            const player = new Player(
+                { name: name, role: role, team: team },
+                { scene: this, x: x, y: y, texture: texture });
             // which team to add this player
             while (this.teams.length <= team) {
                 const tm = this.physics.add.group();
