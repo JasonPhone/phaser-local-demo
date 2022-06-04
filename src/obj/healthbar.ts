@@ -48,6 +48,9 @@ export default class HealthBar {
         // black background 
         this.bar.fillStyle(0x000000);
         this.bar.fillRect(x, y, 80, 8);
+        // white
+        this.bar.fillStyle(0xffffff);
+        this.bar.fillRect(x + 2, y + 2, 76, 4);
         // health and shield
         if (this.cur_health < 30) // red
             this.bar.fillStyle(0xff0000);
@@ -62,9 +65,10 @@ export default class HealthBar {
             shield_len = Math.floor(76 * (this.cur_shield) / (this.cur_health + this.cur_shield));
         }
         this.bar.fillRect(x + 2, y + 2, health_len, 4);
-        this.bar.fillStyle(0x555555);
-        this.bar.fillRect(x + 2 + health_len, y + 2, shield_len, 4);
-
+        if (this.cur_shield > 0) {
+            this.bar.fillStyle(0x999999);
+            this.bar.fillRect(x + 2 + health_len, y + 2, 76 - health_len, 4);
+        }
     }
     get health() { return this.cur_health; }
     get maximum() { return this.max_health; }
