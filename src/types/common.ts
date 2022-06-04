@@ -1,8 +1,3 @@
-export class PlayerInfo {
-    public name: string = "";
-    public team: number = -1;
-    public role: RoleType = RoleType.NULL;
-}
 export enum RoleType {
     NULL,
     ADC,
@@ -23,8 +18,13 @@ export class Buff {
     }
 }
 
+export class PlayerInfo {
+    public name: string = "";
+    public team: number = -1;
+    public role: RoleType = RoleType.NULL;
+}
 export class Command {
-    playerId: string;
+    playerIf: PlayerInfo;
     key: string;
     isDown: boolean;
     playerPositionX: number;
@@ -51,4 +51,3 @@ export class KeyState {
     space: boolean;
     key_space: Phaser.Input.Keyboard.Key;
 }
-

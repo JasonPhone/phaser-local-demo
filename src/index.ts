@@ -1,6 +1,8 @@
 import Phaser from "phaser"
+import BootstrapScene from "./scenes/BootstrapScene";
 import { GameScene } from "./scenes/GameScene";
 import { LoginScene } from "./scenes/LoginScene";
+import { WelcomeScene } from "./scenes/WelcomeScene";
 const config = {
     type: Phaser.AUTO,
     width: 800,
@@ -17,11 +19,14 @@ const config = {
         createContainer: true
     },
     scene: [
-        LoginScene, 
-        GameScene
+        // LoginScene, 
+        BootstrapScene,
+        WelcomeScene,
+        // GameScene,
     ]
 };
 const Game = new Phaser.Game(config);
-Game.scene.start("LoginScene");
+// Game.scene.start("WelcomeScene");
+// Game.scene.start("WelcomeScene");
 
 

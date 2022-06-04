@@ -15,15 +15,10 @@ export default class ServerSocket {
     constructor(server_addr: string, room_nm: string) {
         this.server_address_ = server_addr;
         this.room_name_ = room_nm;
+        this.client_ = new Client(this.server_address_);
     }
     async connect() {
-        // this.client_ = new Client(this.server_address_);
-        // this.client_.joinOrCreate(this.room_name_).then(room => {
-        //     console.log(`Controller::constructor: joined room ${room.id}`);
-        //     this.room_ = room;
-        // }).catch(e => {
-        //     console.log(`Controller::constructor: failed to join room, ${e}`);
-        // })
+        this.room_ = await this.client_.joinOrCreate(this.room_name_);
     }
     /**
      * get all players 
@@ -43,8 +38,12 @@ export default class ServerSocket {
         return player_list;
     }
     send_msg(type: string, msg: Command) {
-        // this.room_.send(type, msg);
-        console.log("MSG", type);
+
+        //     KEYEVENT= "keyevent",
+        //     PTREVENT= "pointerevent",
+        //     SPWAN = "spawn",
+        //     KILL = "kill"
+        this.room_.send(type, msg);
     }
 
     get client() { return this.client_; }

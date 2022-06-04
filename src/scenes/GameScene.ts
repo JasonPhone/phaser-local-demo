@@ -245,7 +245,7 @@ export class GameScene extends Phaser.Scene {
         if (tp === CommandType.KEYEVENT) {
             if (key) {
                 this.server.send_msg(tp, {
-                    playerId: this.player_one.name,
+                    playerIf: this.one_info,
                     key: key,
                     isDown: isDn,
                     playerPositionX: this.player_one.x,
@@ -258,7 +258,7 @@ export class GameScene extends Phaser.Scene {
             }
         } else if (tp === CommandType.PTREVENT) {
             this.server.send_msg(tp, {
-                playerId: this.player_one.name,
+                playerIf: this.one_info,
                 key: "NULL",
                 isDown: false,
                 playerPositionX: this.player_one.x,
@@ -268,7 +268,7 @@ export class GameScene extends Phaser.Scene {
             });
         } else if (tp === CommandType.SPWAN) {
             this.server.send_msg(tp, {
-                playerId: this.player_one.name,
+                playerIf: this.one_info,
                 key: "NULL",
                 isDown: false,
                 playerPositionX: this.player_one.x,
@@ -278,7 +278,7 @@ export class GameScene extends Phaser.Scene {
             });
         } else if (tp === CommandType.KILL) {
             this.server.send_msg(tp, {
-                playerId: this.player_one.name,
+                playerIf: this.one_info,
                 key: "NULL",
                 isDown: false,
                 playerPositionX: this.player_one.x,

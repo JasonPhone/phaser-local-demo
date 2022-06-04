@@ -84,7 +84,8 @@ export class LoginScene extends Phaser.Scene {
                             } else {
                                 role_tp = RoleType.TNK;
                             }
-                            self.scene.start("GameScene", { name: inputUsername, team: 0, role: role_tp });
+                            role_tp = RoleType.TNK;
+                            self.scene.start("GameScene", {name: inputUsername, team: 0, role: role_tp});
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
                             alert("账号与密码不匹配，请重新输入！");
