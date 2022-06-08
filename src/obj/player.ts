@@ -7,7 +7,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     public info: PlayerInfo;
     public health: HealthBar;
     public buff_health: number = 0;
-    public buff_shield: number = 0;
     public skill_CD: number;
     public shoot_CD: number;
     public alive: boolean = false;
@@ -15,6 +14,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     protected spd: number = 200;
     protected atk: number = 20;
     protected def: number = 0;
+    private skilled: boolean = false;
     /**
      * player shoot a bullet
      * @param posx position to shoot at
@@ -23,14 +23,43 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * @returns a bullet class
      */
     shoot(posx: number, posy: number, damage: number = 20) {
-        if (this.shoot_CD > 0) return null;
-        this.shoot_CD = 0.25 * 1000;
+        if (this.shoot_CD > 0) return undefined;
+        this.shoot_CD = 0.2 * 1000;
         const blt = new Bullet({ damage: this.atk, player: this.info.name, team: this.info.team },
             { scene: this.scene, x: posx, y: posy, texture: "bomb" });
         return blt;
     }
-    skill(ptr: Phaser.Input.Pointer) {
-        console.log("use a skill");
+    skill() {
+        if (this.skill_CD > 0) return;
+        this.skill_CD = 10 * 1000;
+        switch (this.info.role) {
+            case RoleType.ADC:
+                /*
+                “产品经理”
+                - 技能：“需求分析”，一段时间内攻击力翻倍。
+                */
+                this.atk *= 2;
+                this.skilled = true;
+                console.log("adc use a skill");
+                break;
+            case RoleType.SUP:
+                /*
+                “程序员”
+                - 技能：“代码领域”，一段时间内自身恢复一定血量
+                */
+                this.skilled = true;
+                console.log("sup use a skill");
+                break;
+            case RoleType.TNK:
+                /*
+                “项目经理”
+                - 技能：“团队攻坚”，立刻获得一个护盾，可以抵挡一定量的伤害。
+                */
+                this.health.gain_shield(20);
+                this.skilled = true;
+                console.log("tnk use a skill");
+                break;
+        }
     }
     hitted(bullet: Bullet) {
         let dmg = Math.max(0, bullet.damage - this.def);
@@ -76,12 +105,40 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.init_property();
     }
     init_property() {
-
         this.health = new HealthBar(this.scene, this.x, this.y);
         this.skill_CD = 0;
-        this.shoot_CD = 0;
-        this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.name.substring(0, 8));
+        console.log("Player::init_property: name", this.info.name);
+        this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.info.name.substring(0, 8));
         this.name_text.setFontFamily('Arial').setFontSize(20).setColor("#ffffff").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
+        switch (this.info.role) {
+            case RoleType.ADC:
+                /*
+                “产品经理”
+                - 定位：攻击型
+                - 攻击力较高，防御力较低，移动速度较高
+                */
+                this.atk += 5;
+                this.def -= 5;
+                this.spd += 40;
+                break;
+            case RoleType.SUP:
+                /*
+                “程序员”
+                - 定位：治疗型
+                - 攻击力较低，防御力较低，移动速度较高
+                */
+                this.def -= 5;
+                this.spd += 40;
+                break;
+            case RoleType.TNK:
+                /*
+                “项目经理”
+                - 定位：防御型
+                - 攻击力较低，防御力较高，移动速度较低
+                */
+                this.def += 5;
+                break;
+        }
     }
     /**
      * actions needed to be performed during time
@@ -101,14 +158,26 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         /***** logic *****/
         this.skill_CD = Math.max(this.skill_CD - delta, 0);
         this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
-        let recover_buff = 1 - Math.pow(0.5, this.buff_health);
-        recover_buff *= 10 * delta / 1000; // 10 point health per second 
-        let shield_buff = 1 - Math.pow(0.5, this.buff_shield);
-        shield_buff *= 10; // 10 point for first shield
-        this.health.gain_shield(shield_buff);
-        this.buff_shield = 0; // clear at once
-
         if (this.health.health <= 0) this.kill();
+        // ADC skill reset
+        if (this.info.role === RoleType.ADC && this.skill_CD <= 6 * 1000 && this.skilled) {
+            this.atk /= 2;
+            this.skilled = false;
+        }
+        // SUP skill
+        if (this.info.role === RoleType.SUP && this.skilled) {
+            if (this.skill_CD <= 6 * 1000) {
+                this.skilled = false;
+            } else {
+                this.health.gain_health(10 * delta / 1000);
+            }
+        }
+        // TNK skill reset
+        if (this.info.role === RoleType.TNK && this.skilled && this.skill_CD <= 6 * 1000) {
+            this.skilled = false;
+            this.health.gain_shield(-this.health.shield);
+        }
+
         /***** render *****/
         this.health.draw(this.x, this.y);
         this.name_text.setPosition(this.x - 40, this.y + 40);
@@ -119,89 +188,3 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         return new Phaser.Math.Vector2(x - this.x, y - this.y).normalize();
     }
 };
-/*
-“产品经理”
-
-- 定位：攻击型
-- 攻击力较高，防御力较低，移动速度较高
-- 技能：“需求分析”，立即射出一发两倍伤害的子弹。
-*/
-export class PlayerADC extends Player {
-    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
-        super(info, data);
-        // this.scene is set in super()
-        this.info = info;
-        this.init_property();
-        this.atk = 25;
-        this.def = -5;
-        this.spd = 250;
-    }
-    skill(ptr: Phaser.Input.Pointer) {
-        if (this.skill_CD > 0) return;
-        this.skill_CD = 10 * 1000;
-        // shoot a huge bullet
-        let ori = this.get_orient(ptr.worldX, ptr.worldY);
-        return this.shoot(ori.x, ori.y, this.atk * 2);
-    }
-}
-/*
-“程序员”
-- 定位：治疗型
-- 攻击力较低，防御力较低，移动速度较高
-- 技能：“代码领域”，
-    以释放技能时角色所在的位置为圆心，生成一个圆形区域，区域内所有同阵营的玩家每秒恢复一定血量。
-    领域叠加时，后叠加领域的治疗效果为前一个的一半。
-*/
-export class PlayerSUP extends Player {
-    
-    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
-        super(info, data);
-        // TODO preload images here, see https://www.youtube.com/watch?v=fdXcD9X4NrQ&t=2311s
-        // load.image("playerADC", pngPlayerADC);
-        console.log("SUP cstr");
-        // this.scene is set in super()
-        this.info = info;
-        this.init_property();
-        this.atk = 15;
-        this.def = -5;
-        this.spd = 250;
-    }
-    skill(ptr: Phaser.Input.Pointer) {
-        if (this.skill_CD > 0) return;
-        this.skill_CD = 10 * 1000;
-        // https://phaser.io/examples/v3/view/physics/arcade/get-bodies-within-circle
-        // a circle where teammates can gain health
-    }
-}
-/*
-“项目经理”
-
-- 定位：防御型
-- 攻击力较低，防御力较高，移动速度较低
-- 技能：“团队攻坚”，立刻获得一个护盾，可以抵挡一定量的伤害。
-    护盾叠加时，后叠加护盾可以抵挡的伤害为前一个的一半。
-*/
-export class PlayerTNK extends Player {
-
-    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
-        super(info, data);
-        // this.scene is set in super()
-        this.info = info;
-        this.init_property();
-        this.atk = 15;
-        this.def = 5;
-        this.spd = 200;
-    }
-    skill(ptr: Phaser.Input.Pointer) {
-        if (this.skill_CD > 0) return;
-        this.skill_CD = 10 * 1000;
-        // get a shield
-        // count the layers
-        let cnt = Math.floor((this.health.shield + 19) / 20);
-        
-        // one more layer, half less shield
-        let shield_val = Math.pow(0.5, cnt) * 20;
-        // increase the shield by integer
-        this.health.gain_shield(Math.floor(shield_val));
-    }
-}

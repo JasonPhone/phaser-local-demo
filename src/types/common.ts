@@ -35,7 +35,7 @@ export class Command {
 export enum CommandType {
     KEYEVENT= "keyevent",
     PTREVENT= "pointerevent",
-    SPWAN = "spawn",
+    SPAWN = "spawn",
     KILL = "kill"
 }
 

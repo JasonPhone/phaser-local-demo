@@ -25,6 +25,7 @@ export class GameScene extends Phaser.Scene {
     private map_wall: Phaser.Tilemaps.TilemapLayer;
     private server: ServerSocket;
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
+    private start: boolean = false;
 
     private input_payload = {
         left: false,
@@ -51,11 +52,11 @@ export class GameScene extends Phaser.Scene {
         this.load.atlas('flares', pngFlare, jsonFlare);
     }
 
-    async create(info: PlayerInfo, server: ServerSocket) {
+    async create(info: PlayerInfo) {
         this.one_info = info;
-        // console.log(this.one_info);
+        console.log("GameScene::create: got info name:", this.one_info.name, ", team:", this.one_info.team, ", role:", this.one_info.role);
         /****** server messages ******/
-        this.server = server;
+        this.server = new ServerSocket("ws://localhost:2567", "game-server");
         await this.server.connect();
         // this.server.room.onMessage(this.ty, (message: Command) => {
         //     console.log("received msg", message);
@@ -90,6 +91,7 @@ export class GameScene extends Phaser.Scene {
         this.server.connect();
         this.init_with_server();
         this.init_keys();
+        // TODO send a spawn message
     }
     init_keys() {
         this.keys = new KeyState();
@@ -117,10 +119,30 @@ export class GameScene extends Phaser.Scene {
             this.add_player(400, 400, player_entry.name, player_entry.role, player_entry.team);
             console.log(player_entry.name, "role:", player_entry.role, "team:", player_entry.team);
         });
-        console.log("playerone:", this.player_one.info.name, "role:", this.player_one.info.role, "team:", this.player_one.info.team);
+        // messages
+        this.server.room.onMessage("start-game", (msg) => {
+            console.log("game now start!");
+            this.start = true;
+        });
+        this.server.room.onMessage(CommandType.KEYEVENT, this.process_key_msg);
+        this.server.room.onMessage(CommandType.PTREVENT, this.process_ptr_msg);
+        this.server.room.onMessage(CommandType.KILL, this.process_kill_msg);
+        this.server.room.onMessage(CommandType.SPAWN, this.process_spawn_msg);
     }
-
+    process_key_msg(msg: Command) {
+        console.log("key event from server");
+    }
+    process_spawn_msg(msg: Command) {
+        console.log("spawn event from server");
+    }
+    process_ptr_msg(msg: Command) {
+        console.log("ptr event from server");
+    }
+    process_kill_msg(msg: Command) {
+        console.log("kill event from server");
+    }
     update(time: number, delta: number) {
+        if (this.start === false) return;
         if (!this.player_one || this.player_one.alive === false) return;
         if (this.player_one.health.health <= 0) {
             // this player died
@@ -173,6 +195,7 @@ export class GameScene extends Phaser.Scene {
         // space(skill), does not need "up or down"
         if (this.keys.key_space.isDown) {
             this.keys.space = true;
+            this.send_msg(CommandType.KEYEVENT, "SPACE", true);
         } else {
             this.keys.space = false;
         }
@@ -198,9 +221,8 @@ export class GameScene extends Phaser.Scene {
         this.player_one.rotate_to(ptx, pty);
         // skill
         if (this.keys.space) {
-            this.player_one.skill(this.input.activePointer);
+            this.player_one.skill();
         }
-        // ...
     }
     /**
      * add a player to the scene
@@ -212,25 +234,30 @@ export class GameScene extends Phaser.Scene {
         if (team < 0 || team > 20) {
             console.error(`GameScene::add_player: invalid team id ${team}`);
         } else {
+            let player: Player;
             // set texture
-            let texture = "dude";
             switch (role) {
                 case RoleType.ADC:
-                    texture = "playerADC";
+                    player = new Player(
+                        { name: name, role: role, team: team },
+                        { scene: this, x: x, y: y, texture: "playerADC" });
                     break;
                 case RoleType.SUP:
-                    texture = "playerSUP";
+                    player = new Player(
+                        { name: name, role: role, team: team },
+                        { scene: this, x: x, y: y, texture: "playerSUP" });
                     break;
                 case RoleType.TNK:
-                    texture = "playerTNK";
+                    player = new Player(
+                        { name: name, role: role, team: team },
+                        { scene: this, x: x, y: y, texture: "playerTNK" });
                     break;
                 default:
-                    texture = "dude";
+                    player = new Player(
+                        { name: name, role: role, team: team },
+                        { scene: this, x: x, y: y, texture: "dude" });
             }
             // generate player
-            const player = new Player(
-                { name: name, role: role, team: team },
-                { scene: this, x: x, y: y, texture: texture });
             // which team to add this player
             while (this.teams.length <= team) {
                 const tm = this.physics.add.group();
@@ -238,7 +265,7 @@ export class GameScene extends Phaser.Scene {
                 this.teams.push(tm);
             }
             this.teams[team].add(player);
-            console.log("player", player.info.name, "in team", team, "real team", player.info.team);
+            // console.log("player", player.info.name, "in team", team, "real team", player.info.team);
             player.spawn();
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
@@ -279,7 +306,7 @@ export class GameScene extends Phaser.Scene {
                 MousePositionX: this.input.activePointer.worldX,
                 MousePositionY: this.input.activePointer.worldY
             });
-        } else if (tp === CommandType.SPWAN) {
+        } else if (tp === CommandType.SPAWN) {
             this.server.send_msg(tp, {
                 playerIf: this.one_info,
                 key: "NULL",
@@ -304,21 +331,28 @@ export class GameScene extends Phaser.Scene {
         }
     }
     shoot_event(pointer: Phaser.Input.Pointer) {
+        if (this.start === false) return;
         // generate bullet
         const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
-        const velo = this.player_one.get_orient(ptx, pty).scale(800);
         const pos = this.player_one.get_orient(ptx, pty).scale(30);
         const bullet = this.player_one.shoot(this.player_one.x + pos.x, this.player_one.y + pos.y);
-        // test shoot CD
         if (!bullet) return;
         // send command
         this.send_msg(CommandType.PTREVENT, "LEFT", true);
         this.bullets.add(bullet, true);
-        bullet.setVelocity(velo.x, velo.y);
+        let velo: Phaser.Math.Vector2;
+        if (bullet.damage > 30) {
+            bullet.setScale(1.5);
+            velo = this.player_one.get_orient(ptx, pty).scale(400);
+            bullet.setVelocity(velo.x, velo.y);
+        } else {
+            velo = this.player_one.get_orient(ptx, pty).scale(600);
+            bullet.setVelocity(velo.x, velo.y);
+        }
         bullet.create_particle(this.add.particles('flares'));
         // a particle emitter
         this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
-            console.log("hitted wall");
+            // console.log("hitted wall");
             // a explode vfx
             let emitter = this.praticle_mngr.createEmitter({
                 frame: ["white", "red"],
@@ -335,7 +369,7 @@ export class GameScene extends Phaser.Scene {
             if (this.player_one.info.team != index) {
                 // use overlap to avoid bullet pushing the hitted player
                 this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
-                    console.log("hitted player", player.info.name);
+                    // console.log("hitted player", player.info.name);
                     // a explode vfx
                     let emitter = this.praticle_mngr.createEmitter({
                         frame: ["white", "red"],

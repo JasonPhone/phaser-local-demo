@@ -17,9 +17,9 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
     }
     create_particle(mngr: Phaser.GameObjects.Particles.ParticleEmitterManager) {
         this.particle = mngr;
-        const clr = this.damage <= 20 ? "white" : "red";
+        const clr = this.damage <= 30 ? "white" : "red";
         this.particle.createEmitter({
-            frame: ["white"],
+            frame: [clr],
             quantity: 20,
             speedX: { min: 20, max: 50 },
             speedY: { min: 20, max: 50 },
@@ -28,7 +28,7 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
             scale: { start: 0.1, end: 0.002 },
             rotate: { min: -180, max: 180 },
             angle: { min: 30, max: 110 },
-            blendMode: 'SCREEN',
+            blendMode: this.damage <= 30 ? "SCREEN" : "ADD",
             frequency: 15,
             follow: this
         });
