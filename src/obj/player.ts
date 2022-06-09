@@ -15,6 +15,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     protected atk: number = 20;
     protected def: number = 0;
     private skilled: boolean = false;
+    private particle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
+    private particle_emitter: Phaser.GameObjects.Particles.ParticleEmitter;
     /**
      * player shoot a bullet
      * @param posx position to shoot at
@@ -41,6 +43,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 this.atk *= 2;
                 this.skilled = true;
                 console.log("adc use a skill");
+                this.particle_emitter.start();
                 break;
             case RoleType.SUP:
                 /*
@@ -49,6 +52,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 */
                 this.skilled = true;
                 console.log("sup use a skill");
+                this.particle_emitter.start();
                 break;
             case RoleType.TNK:
                 /*
@@ -96,6 +100,25 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.removeFromUpdateList();
         this.setPosition(-100, -100);  // away from all collides
         this.alive = false;
+    }
+    create_particle(mngr: Phaser.GameObjects.Particles.ParticleEmitterManager) {
+        this.particle_mngr = mngr;
+        let clr = "";
+        if (this.info.role === RoleType.ADC) clr = "red";
+        else if (this.info.role === RoleType.SUP) clr = "green";
+        this.particle_emitter = this.particle_mngr.createEmitter({
+            frame: [clr],
+            quantity: 9,
+            speedX: { min: 20, max: 50 },
+            speedY: { min: 20, max: 50 },
+            lifespan: 200,
+            alpha: { start: 0.4, end: 0, ease: "Sine.easeIn" },
+            scale: { start: 1.0, end: 0.7 },
+            angle: { min: 0, max: 360},
+            blendMode: "SCREEN",
+            frequency: 30,
+            follow: this
+        }).stop();
     }
     constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
         const { scene, x, y, texture } = data;
@@ -149,6 +172,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * @param delta 
      */
     update(time: number, delta: number): void {
+        if (this.alive === false) return;
         // if (time - this.tm > 2000) {
         //     this.tm = time;
         //     const x = Math.random() * 400 - 200;
@@ -163,11 +187,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.info.role === RoleType.ADC && this.skill_CD <= 6 * 1000 && this.skilled) {
             this.atk /= 2;
             this.skilled = false;
+            this.particle_emitter.stop();
         }
         // SUP skill
         if (this.info.role === RoleType.SUP && this.skilled) {
             if (this.skill_CD <= 6 * 1000) {
                 this.skilled = false;
+                this.particle_emitter.stop();
             } else {
                 this.health.gain_health(10 * delta / 1000);
             }

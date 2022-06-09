@@ -1,8 +1,8 @@
 import Phaser from "phaser"
-import BootstrapScene from "./scenes/BootstrapScene";
 import { GameScene } from "./scenes/GameScene";
 import { LoginScene } from "./scenes/LoginScene";
 import { WelcomeScene } from "./scenes/WelcomeScene";
+import { EndScene } from "./scenes/EndScene";
 const config = {
     type: Phaser.WEBGL,
     width: 800,
@@ -22,6 +22,7 @@ const config = {
         LoginScene, 
         WelcomeScene,
         GameScene,
+        EndScene
     ]
 };
 const Game = new Phaser.Game(config);

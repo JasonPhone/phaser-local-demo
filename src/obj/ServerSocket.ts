@@ -29,9 +29,9 @@ export default class ServerSocket {
         // player_list.push(
         //     { name: "jason", team: 0, role: RoleType.ADC }
         // );
-        player_list.push(
-            { name: "ally", team: 0, role: RoleType.SUP }
-        );
+        // player_list.push(
+        //     { name: "ally", team: 0, role: RoleType.SUP }
+        // );
         player_list.push(
             { name: "enemy", team: 1, role: RoleType.TNK }
         );

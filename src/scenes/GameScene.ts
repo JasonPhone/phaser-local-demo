@@ -18,6 +18,7 @@ import jsonFlare from "../assets/particle/flares.json";
 
 export class GameScene extends Phaser.Scene {
     private teams: Phaser.Physics.Arcade.Group[];
+    private alive_count: number = 0;
     private player_one: Player;
     private one_info: PlayerInfo;
     private bullets: Phaser.Physics.Arcade.Group;
@@ -141,15 +142,7 @@ export class GameScene extends Phaser.Scene {
     process_kill_msg(msg: Command) {
         console.log("kill event from server");
     }
-    update(time: number, delta: number) {
-        if (this.start === false) return;
-        if (!this.player_one || this.player_one.alive === false) return;
-        if (this.player_one.health.health <= 0) {
-            // this player died
-            this.send_msg(CommandType.KILL);
-            this.cameras.main.stopFollow();
-            return;
-        }
+    update_keys() {
         this.input.activePointer.updateWorldPoint(this.cameras.main);
         // keys event
         // left
@@ -192,13 +185,29 @@ export class GameScene extends Phaser.Scene {
                 this.send_msg(CommandType.KEYEVENT, "S", false);
             this.keys.down = false;
         }
-        // space(skill), does not need "up or down"
+        // space(skill)
         if (this.keys.key_space.isDown) {
+            if (this.keys.space === false)
+                this.send_msg(CommandType.KEYEVENT, "SPACE", true);
             this.keys.space = true;
-            this.send_msg(CommandType.KEYEVENT, "SPACE", true);
         } else {
+            if (this.keys.space === true)
+                this.send_msg(CommandType.KEYEVENT, "SPACE", false);
             this.keys.space = false;
         }
+    }
+    update(time: number, delta: number) {
+        if (this.start === false) return;
+        if (!this.player_one) return;
+        if (this.player_one.alive === false || this.alive_count === 1) {
+            // this player died
+            this.send_msg(CommandType.KILL);
+            this.cameras.main.stopFollow();
+            this.start = false;
+            this.scene.start("EndScene", { name: this.one_info.name });
+            return;
+        }
+        this.update_keys();
         // movement 
         let velo = new Phaser.Math.Vector2(0, 0);
         if (this.keys.left) {
@@ -257,7 +266,8 @@ export class GameScene extends Phaser.Scene {
                         { name: name, role: role, team: team },
                         { scene: this, x: x, y: y, texture: "dude" });
             }
-            // generate player
+            // generate player particle
+            player.create_particle(this.add.particles("flares"));
             // which team to add this player
             while (this.teams.length <= team) {
                 const tm = this.physics.add.group();
@@ -349,7 +359,7 @@ export class GameScene extends Phaser.Scene {
             velo = this.player_one.get_orient(ptx, pty).scale(600);
             bullet.setVelocity(velo.x, velo.y);
         }
-        bullet.create_particle(this.add.particles('flares'));
+        bullet.create_particle(this.add.particles("flares"));
         // a particle emitter
         this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
             // console.log("hitted wall");
