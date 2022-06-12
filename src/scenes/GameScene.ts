@@ -28,6 +28,7 @@ export class GameScene extends Phaser.Scene {
     private server: ServerSocket;
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
     private start: boolean = false;
+    private start_time: number = 999999999999;
     private key_input: KeyInput;
     constructor() {
         super({
@@ -115,7 +116,8 @@ export class GameScene extends Phaser.Scene {
         // messages
         this.server.room.onMessage("start-game", (msg) => {
             console.log("game now start!");
-            this.start = true;
+            // this.start = true;
+            this.start_time = this.time.now;
         });
         this.server.room.onMessage(CommandType.KEYEVENT, (msg: Command) => this.process_key_msg(msg));
         this.server.room.onMessage(CommandType.PTREVENT, (msg: Command) => this.process_ptr_msg(msg));
@@ -256,20 +258,22 @@ export class GameScene extends Phaser.Scene {
         }
     }
     update(time: number, delta: number) {
-        if (this.start === false) return;
+        if (time - this.start_time < 3000) return;
+        else this.start = true;
         if (!this.player_one) return;
-        let alive_count = 0;
+        const st = new Set<number>();
         this.players.forEach((plr: Player) => {
-            alive_count += plr.alive ? 1 : 0;
+            st.add(plr.info.team);
         });
+        let team_count = st.size;
         // console.log("alive", alive_count);
-        if (this.player_one.alive === false) {
-            // if (this.player_one.alive === false || alive_count <= 1) {
+        // if (this.player_one.alive === false) {
+        if (this.player_one.alive === false || (team_count == 1 && time > 3000)) {
             // this player died or is the only one
             this.send_msg(CommandType.KILL);
             this.cameras.main.stopFollow();
             this.start = false;
-            this.scene.start("EndScene", { name: this.one_info.name });
+            this.scene.start("EndScene", { name: this.one_info.name , win: st.has(this.one_info.team)});
             return;
         }
         // movement and skill is done in each player's update()

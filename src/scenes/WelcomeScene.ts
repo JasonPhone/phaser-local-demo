@@ -4,7 +4,7 @@ import Bullet from "../obj/Bullet";
 import { Room, Client } from "colyseus.js";
 import ServerSocket from "../obj/ServerSocket";
 
-import bg from "../assets/images/citybg.png";
+import bg from "../assets/images/bluebg.png";
 import pngPlayerADC from "../assets/adc_body.png";
 import pngPlayerSUP from "../assets/sup_body.png";
 import pngPlayerTNK from "../assets/tank_body.png";

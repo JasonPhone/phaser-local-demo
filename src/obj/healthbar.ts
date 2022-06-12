@@ -58,16 +58,16 @@ export default class HealthBar {
             this.bar.fillStyle(0x00ff00);
         let health_len = 0, shield_len = 0;
         if (this.cur_health + this.cur_shield <= 100) {
-            health_len = Math.floor(0.76 * this.cur_health);
-            shield_len = Math.floor(0.76 * this.cur_shield);
+            health_len = Math.floor(0.76 * this.cur_health + 0.5);
+            shield_len = Math.floor(0.76 * this.cur_shield + 0.5);
         } else {
-            health_len = Math.floor(76 * (this.cur_health) / (this.cur_health + this.cur_shield));
-            shield_len = Math.floor(76 * (this.cur_shield) / (this.cur_health + this.cur_shield));
+            health_len = Math.floor(76 * (this.cur_health) / (this.cur_health + this.cur_shield) + 0.5);
+            shield_len = Math.floor(76 * (this.cur_shield) / (this.cur_health + this.cur_shield) + 0.5);
         }
         this.bar.fillRect(x + 2, y + 2, health_len, 4);
         if (this.cur_shield > 0) {
             this.bar.fillStyle(0x999999);
-            this.bar.fillRect(x + 2 + health_len, y + 2, 76 - health_len, 4);
+            this.bar.fillRect(x + 2 + health_len, y + 2, shield_len, 4);
         }
     }
     get health() { return this.cur_health; }

@@ -4,7 +4,7 @@ import Bullet from "../obj/Bullet";
 import { Room, Client } from "colyseus.js";
 import ServerSocket from "../obj/ServerSocket";
 
-import bg from "../assets/images/citybg.png";
+import bg from "../assets/images/bluebg.png";
 import pngPlayerADC from "../assets/adc_body.png";
 import pngPlayerSUP from "../assets/sup_body.png";
 import pngPlayerTNK from "../assets/tank_body.png";
@@ -21,6 +21,7 @@ export class EndScene extends Phaser.Scene {
     private exit_text: Phaser.GameObjects.Text;
     private restart_text: Phaser.GameObjects.Text;
     private nm: string;
+    private win: boolean;
     private choose: number = -1;
     constructor() {
         super({
@@ -33,17 +34,24 @@ export class EndScene extends Phaser.Scene {
     }
     create(data: any) {
         console.log("EndScene::create: scene created");
-        const { name } = data;
+        const { name, win } = data;
         this.nm = name;
+        this.win = win;
         const img = this.add.image(0, 0, 'bg').setOrigin(0, 0);
         /****** team choose ******/
-        const team_prompt_text = this.add.text(50, 50, "游戏结束", { fontFamily: "宋体", fontSize: "50px" });
-        this.restart_text = this.add.text(170, 130, "重新开始",
+        const team_prompt_text = this.add.text(50, 50, "游戏结束", { fontFamily: "宋体", fontSize: "40px" });
+        const win_prompt_text = this.add.text(
+            340, 220,
+            this.win ? "胜利" : "失败",
+            {
+                fontFamily: "宋体", fontSize: "60px"
+            });
+        this.restart_text = this.add.text(220, 330, "重新开始",
             {
                 fontFamily: "宋体",
                 fontSize: "30px",
             }).setInteractive();
-        this.exit_text = this.add.text(470, 130, "退出",
+        this.exit_text = this.add.text(520, 330, "退出",
             {
                 fontFamily: "宋体",
                 fontSize: "30px",
@@ -57,7 +65,7 @@ export class EndScene extends Phaser.Scene {
             this.scene.start("WelcomeScene", { name: this.nm });
         } else if (this.choose === 0) {
             // goto login scene
-            this.scene.start("LoginScene"); 
+            this.scene.start("LoginScene");
         }
     }
     update(time: number, delta: number): void {

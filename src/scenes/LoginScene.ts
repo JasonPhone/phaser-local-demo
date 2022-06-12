@@ -1,5 +1,5 @@
 import "phaser";
-import bg from "../assets/images/citybg.png";
+import bg from "../assets/images/bluebg.png";
 import loginform from "../assets/text/loginform.html";
 import registerform from "../assets/text/registerform.html";
 import { PlayerInfo, RoleType } from "../types/common";
