@@ -97,7 +97,7 @@ export class WelcomeScene extends Phaser.Scene {
     }
     goto_gamescene() {
         // GameScene needs playerinfo and server
-        this.scene.launch("GameScene", this.player_info);
+        this.scene.start("GameScene", this.player_info);
     }
     update(time: number, delta: number): void {
         // draw indicator

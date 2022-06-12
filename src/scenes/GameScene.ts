@@ -1,5 +1,6 @@
 import Phaser, { Physics, Scenes } from "phaser";
 import { KeyInput, PlayerInfo, RoleType, CommandType, Command } from "../types/common";
+import { GameState } from "../types/GameState";
 import Player from "../obj/Player";
 import Bullet from "../obj/Bullet";
 import ServerSocket from "../obj/ServerSocket";
@@ -17,8 +18,7 @@ import pngFlare from "../assets/particle/flares.png";
 import jsonFlare from "../assets/particle/flares.json";
 
 export class GameScene extends Phaser.Scene {
-    private teams: Phaser.Physics.Arcade.Group[];
-    private alive_count: number = 0;
+    private teams: Map<number, Phaser.Physics.Arcade.Group>;
     private player_one: Player;
     private players: Map<string, Player>;
     private one_info: PlayerInfo;
@@ -54,16 +54,6 @@ export class GameScene extends Phaser.Scene {
         this.server = new ServerSocket("ws://localhost:2567", "game-server");
         await this.server.connect();
         console.log("GameScene::create: server connected");
-        // this.server.room.onMessage(this.ty, (message: Command) => {
-        //     console.log("received msg", message);
-        //     console.log(message.key);
-        // });
-        this.server.room.onStateChange.once((state: any) => {
-            console.log("state first init", state);
-        })
-        this.server.room.onStateChange.once((state: any) => {
-            console.log("state follow update", state);
-        })
         /****** visual ******/
         this.physics.world.fixedStep = false;  // or the health bar will glitch
         const dmap = this.make.tilemap({ key: "map_default" });
@@ -79,7 +69,7 @@ export class GameScene extends Phaser.Scene {
         console.log("GameScene::create: vfx done");
 
         /****** logic ******/
-        this.teams = new Array<Phaser.Physics.Arcade.Group>();
+        this.teams = new Map<number, Phaser.Physics.Arcade.Group>();
         this.players = new Map<string, Player>();
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
@@ -131,8 +121,25 @@ export class GameScene extends Phaser.Scene {
         this.server.room.onMessage(CommandType.PTREVENT, (msg: Command) => this.process_ptr_msg(msg));
         this.server.room.onMessage(CommandType.KILL, (msg: Command) => this.process_kill_msg(msg));
         this.server.room.onMessage(CommandType.SPAWN, (msg: Command) => this.process_spawn_msg(msg));
+        // state updates
+        this.server.room.onStateChange.once(
+            (state: GameState) => this.process_state_changed(state)
+        );
+        this.server.room.onStateChange(
+            (state: GameState) => this.process_state_changed(state)
+        );
+    }
+    process_state_changed(state: GameState) {
+        const plrs = state.players;
+        plrs.forEach((plr: PlayerInfo) => {
+            if (!this.players.has(plr.name)) {
+                console.log("GameScene::process_state_changed:", plr.name, plr.team, plr.role, "joined");
+                this.add_player(400, 400, plr.name, plr.role, plr.team);
+            }
+        });
     }
     process_key_msg(msg: Command) {
+        if (this.start === false) return;
         if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
         console.log("keyevent", msg.playerIf.name, msg.key);
@@ -155,6 +162,7 @@ export class GameScene extends Phaser.Scene {
         plr.set_velo(velo.x, velo.y);
     }
     process_spawn_msg(msg: Command) {
+        if (this.start === false) return;
         if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name)) {
             console.log("player", msg.playerIf.name, "respawned");
@@ -162,12 +170,14 @@ export class GameScene extends Phaser.Scene {
             plr.setPosition(msg.playerPositionX, msg.playerPositionY);
             plr.rotate_to(msg.MousePositionX, msg.MousePositionY);
         } else {
-            console.log("new player", msg.playerIf.name, "added");
+            console.log("GameScene::process_spawn_msg: new player", msg.playerIf.name, "added");
+            console.log(this);
             const plr = this.add_player(400, 400, msg.playerIf.name, msg.playerIf.role, msg.playerIf.team);
             this.players.set(msg.playerIf.name, plr);
         }
     }
     process_ptr_msg(msg: Command) {
+        if (this.start === false) return;
         if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
         // console.log("ptrevent", msg.playerIf.name, msg.key);
@@ -183,6 +193,7 @@ export class GameScene extends Phaser.Scene {
         }
     }
     process_kill_msg(msg: Command) {
+        if (this.start === false) return;
         if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
         console.log(msg.playerIf.name, "died");
@@ -247,8 +258,14 @@ export class GameScene extends Phaser.Scene {
     update(time: number, delta: number) {
         if (this.start === false) return;
         if (!this.player_one) return;
-        if (this.player_one.alive === false || this.alive_count === 1) {
-            // this player died
+        let alive_count = 0;
+        this.players.forEach((plr: Player) => {
+            alive_count += plr.alive ? 1 : 0;
+        });
+        // console.log("alive", alive_count);
+        if (this.player_one.alive === false) {
+            // if (this.player_one.alive === false || alive_count <= 1) {
+            // this player died or is the only one
             this.send_msg(CommandType.KILL);
             this.cameras.main.stopFollow();
             this.start = false;
@@ -301,12 +318,15 @@ export class GameScene extends Phaser.Scene {
             // generate player particle
             player.create_particle(this.add.particles("flares"));
             // which team to add this player
-            while (this.teams.length <= team) {
+            if (this.teams.has(team)) {
+                const tm = this.teams.get(team);
+                tm.add(player);
+            } else {
                 const tm = this.physics.add.group();
+                tm.add(player);
                 tm.runChildUpdate = true;
-                this.teams.push(tm);
+                this.teams.set(team, tm);
             }
-            this.teams[team].add(player);
             this.players.set(player.info.name, player);
             // console.log("player", player.info.name, "in team", team, "real team", player.info.team);
             player.spawn();
