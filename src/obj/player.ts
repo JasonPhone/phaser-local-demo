@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import Bullet from "./Bullet";
-import { Buff, BuffType, PlayerInfo, RoleType } from "../types/common";
+import { PlayerInfo, RoleType } from "../types/common";
 import HealthBar from "./HealthBar";
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
@@ -17,6 +17,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     private skilled: boolean = false;
     private particle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
     private particle_emitter: Phaser.GameObjects.Particles.ParticleEmitter;
+    public keys = { // for updating velocity
+        right: false,
+        left: false,
+        up: false,
+        down: false,
+        space: false,
+    }
     /**
      * player shoot a bullet
      * @param posx position to shoot at
@@ -114,7 +121,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             lifespan: 200,
             alpha: { start: 0.4, end: 0, ease: "Sine.easeIn" },
             scale: { start: 1.0, end: 0.7 },
-            angle: { min: 0, max: 360},
+            angle: { min: 0, max: 360 },
             blendMode: "SCREEN",
             frequency: 30,
             follow: this
@@ -163,6 +170,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 break;
         }
     }
+    set_velo(x: number, y: number) {
+        const velo = new Phaser.Math.Vector2(x, y);
+        velo.normalize();
+        velo.scale(this.spd);
+        this.setVelocity(velo.x, velo.y);
+    }
     /**
      * actions needed to be performed during time
      * NOTE: update should be explicitly called in scene update
@@ -202,6 +215,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.info.role === RoleType.TNK && this.skilled && this.skill_CD <= 6 * 1000) {
             this.skilled = false;
             this.health.gain_shield(-this.health.shield);
+        }
+        // move and skill
+        let velo = new Phaser.Math.Vector2(0, 0);
+        if (this.keys.up) velo.y = -1;
+        if (this.keys.down) velo.y = 1;
+        if (this.keys.left) velo.x = -1;
+        if (this.keys.right) velo.x = 1;
+        this.set_velo(velo.x, velo.y);
+        if (this.keys.space) {
+            this.skill(); this.keys.space = false;
         }
 
         /***** render *****/

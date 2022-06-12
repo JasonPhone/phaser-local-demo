@@ -1,5 +1,5 @@
 import Phaser, { Physics, Scenes } from "phaser";
-import { KeyState, PlayerInfo, RoleType, CommandType, Command } from "../types/common";
+import { KeyInput, PlayerInfo, RoleType, CommandType, Command } from "../types/common";
 import Player from "../obj/Player";
 import Bullet from "../obj/Bullet";
 import ServerSocket from "../obj/ServerSocket";
@@ -20,6 +20,7 @@ export class GameScene extends Phaser.Scene {
     private teams: Phaser.Physics.Arcade.Group[];
     private alive_count: number = 0;
     private player_one: Player;
+    private players: Map<string, Player>;
     private one_info: PlayerInfo;
     private bullets: Phaser.Physics.Arcade.Group;
     private cursor_keys: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -27,14 +28,7 @@ export class GameScene extends Phaser.Scene {
     private server: ServerSocket;
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
     private start: boolean = false;
-
-    private input_payload = {
-        left: false,
-        right: false,
-        up: false,
-        down: false,
-    };
-    private keys: KeyState;
+    private key_input: KeyInput;
     constructor() {
         super({
             key: "GameScene"
@@ -59,6 +53,7 @@ export class GameScene extends Phaser.Scene {
         /****** server messages ******/
         this.server = new ServerSocket("ws://localhost:2567", "game-server");
         await this.server.connect();
+        console.log("GameScene::create: server connected");
         // this.server.room.onMessage(this.ty, (message: Command) => {
         //     console.log("received msg", message);
         //     console.log(message.key);
@@ -81,33 +76,39 @@ export class GameScene extends Phaser.Scene {
 
         this.cameras.main.zoom = 0.8;
         this.praticle_mngr = this.add.particles("flares");
+        console.log("GameScene::create: vfx done");
 
         /****** logic ******/
         this.teams = new Array<Phaser.Physics.Arcade.Group>();
+        this.players = new Map<string, Player>();
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
         this.bullets = this.physics.add.group();
 
-        this.input.on("pointerdown", this.shoot_event, this);
-        this.server.connect();
+        this.input.on("pointerdown", () => {
+            this.send_msg(CommandType.PTREVENT, "LEFT", true);
+            this.input.activePointer.updateWorldPoint(this.cameras.main);
+            this.shoot_event(this.player_one, this.input.activePointer.worldX, this.input.activePointer.worldY);
+        }, this);
+        this.input.on("pointermove", () => {
+            this.send_msg(CommandType.PTREVENT, "MOVE", true);
+        }, this);
+        console.log("GameScene::create: logic done");
         this.init_with_server();
+        console.log("GameScene::create: init with server done");
         this.init_keys();
-        // TODO send a spawn message
+        console.log("GameScene::create: init keys done");
+        // spawn player_one
+        this.send_msg(CommandType.SPAWN);
     }
     init_keys() {
-        this.keys = new KeyState();
-        // no key is down
-        this.keys.left = false;
-        this.keys.right = false;
-        this.keys.up = false;
-        this.keys.down = false;
-        this.keys.space = false;
+        this.key_input = new KeyInput();
         // listeners
-        this.keys.key_left = this.input.keyboard.addKey("A");
-        this.keys.key_right = this.input.keyboard.addKey("D");
-        this.keys.key_up = this.input.keyboard.addKey("W");
-        this.keys.key_down = this.input.keyboard.addKey("S");
-        this.keys.key_space = this.input.keyboard.addKey("SPACE");
+        this.key_input.key_left = this.input.keyboard.addKey("A");
+        this.key_input.key_right = this.input.keyboard.addKey("D");
+        this.key_input.key_up = this.input.keyboard.addKey("W");
+        this.key_input.key_down = this.input.keyboard.addKey("S");
+        this.key_input.key_space = this.input.keyboard.addKey("SPACE");
     }
     init_with_server() {
         let player_list = this.server.get_players();
@@ -117,7 +118,8 @@ export class GameScene extends Phaser.Scene {
                 this.one_info.role = player_entry.role;
                 this.one_info.team = player_entry.team;
             }
-            this.add_player(400, 400, player_entry.name, player_entry.role, player_entry.team);
+            const plr = this.add_player(400, 400, player_entry.name, player_entry.role, player_entry.team);
+            this.players.set(player_entry.name, plr);
             console.log(player_entry.name, "role:", player_entry.role, "team:", player_entry.team);
         });
         // messages
@@ -125,75 +127,121 @@ export class GameScene extends Phaser.Scene {
             console.log("game now start!");
             this.start = true;
         });
-        this.server.room.onMessage(CommandType.KEYEVENT, this.process_key_msg);
-        this.server.room.onMessage(CommandType.PTREVENT, this.process_ptr_msg);
-        this.server.room.onMessage(CommandType.KILL, this.process_kill_msg);
-        this.server.room.onMessage(CommandType.SPAWN, this.process_spawn_msg);
+        this.server.room.onMessage(CommandType.KEYEVENT, (msg: Command) => this.process_key_msg(msg));
+        this.server.room.onMessage(CommandType.PTREVENT, (msg: Command) => this.process_ptr_msg(msg));
+        this.server.room.onMessage(CommandType.KILL, (msg: Command) => this.process_kill_msg(msg));
+        this.server.room.onMessage(CommandType.SPAWN, (msg: Command) => this.process_spawn_msg(msg));
     }
     process_key_msg(msg: Command) {
-        console.log("key event from server");
+        if (msg.playerIf.name === this.one_info.name) return;
+        if (this.players.has(msg.playerIf.name) === false) return;
+        console.log("keyevent", msg.playerIf.name, msg.key);
+        const plr = this.players.get(msg.playerIf.name);
+        let velo = new Phaser.Math.Vector2(plr.body.velocity.x, plr.body.velocity.y);
+        velo.normalize();
+        if (msg.key === "W") {
+            plr.keys.up = msg.isDown;
+        } else if (msg.key === "A") {
+            plr.keys.left = msg.isDown;
+        } else if (msg.key === "S") {
+            plr.keys.down = msg.isDown;
+        } else if (msg.key === "D") {
+            plr.keys.right = msg.isDown;
+        } else if (msg.key === "SPACE") {
+            plr.keys.space = msg.isDown;
+        } else {
+            console.error("unkonwn key in keyevent", msg.key);
+        }
+        plr.set_velo(velo.x, velo.y);
     }
     process_spawn_msg(msg: Command) {
-        console.log("spawn event from server");
+        if (msg.playerIf.name === this.one_info.name) return;
+        if (this.players.has(msg.playerIf.name)) {
+            console.log("player", msg.playerIf.name, "respawned");
+            const plr = this.players.get(msg.playerIf.name);
+            plr.setPosition(msg.playerPositionX, msg.playerPositionY);
+            plr.rotate_to(msg.MousePositionX, msg.MousePositionY);
+        } else {
+            console.log("new player", msg.playerIf.name, "added");
+            const plr = this.add_player(400, 400, msg.playerIf.name, msg.playerIf.role, msg.playerIf.team);
+            this.players.set(msg.playerIf.name, plr);
+        }
     }
     process_ptr_msg(msg: Command) {
-        console.log("ptr event from server");
+        if (msg.playerIf.name === this.one_info.name) return;
+        if (this.players.has(msg.playerIf.name) === false) return;
+        // console.log("ptrevent", msg.playerIf.name, msg.key);
+        const plr = this.players.get(msg.playerIf.name);
+        if (msg.key === "LEFT") {
+            // console.log("player", msg.playerIf.name, "shoot");
+            this.shoot_event(plr, msg.MousePositionX, msg.MousePositionY);
+        } else if (msg.key === "MOVE") {
+            // console.log("player", msg.playerIf.name, "move");
+            plr.rotate_to(msg.MousePositionX, msg.MousePositionY);
+        } else {
+            console.error("unkonwn key in ptrevent", msg.key);
+        }
     }
     process_kill_msg(msg: Command) {
-        console.log("kill event from server");
+        if (msg.playerIf.name === this.one_info.name) return;
+        if (this.players.has(msg.playerIf.name) === false) return;
+        console.log(msg.playerIf.name, "died");
+        const plr = this.players.get(msg.playerIf.name);
+        plr.kill();
+        this.players.delete(msg.playerIf.name);
     }
     update_keys() {
         this.input.activePointer.updateWorldPoint(this.cameras.main);
         // keys event
         // left
-        if (this.keys.key_left.isDown) {
-            if (this.keys.left === false)
+        if (this.key_input.key_left.isDown) {
+            if (this.player_one.keys.left === false)
                 this.send_msg(CommandType.KEYEVENT, "A", true);
-            this.keys.left = true;
+            this.player_one.keys.left = true;
         } else {
-            if (this.keys.left === true)
+            if (this.player_one.keys.left === true)
                 this.send_msg(CommandType.KEYEVENT, "A", false);
-            this.keys.left = false;
+            this.player_one.keys.left = false;
         }
         // right
-        if (this.keys.key_right.isDown) {
-            if (this.keys.right === false)
+        if (this.key_input.key_right.isDown) {
+            if (this.player_one.keys.right === false)
                 this.send_msg(CommandType.KEYEVENT, "D", true);
-            this.keys.right = true;
+            this.player_one.keys.right = true;
         } else {
-            if (this.keys.right === true)
+            if (this.player_one.keys.right === true)
                 this.send_msg(CommandType.KEYEVENT, "D", false);
-            this.keys.right = false;
+            this.player_one.keys.right = false;
         }
         // up
-        if (this.keys.key_up.isDown) {
-            if (this.keys.up === false)
+        if (this.key_input.key_up.isDown) {
+            if (this.player_one.keys.up === false)
                 this.send_msg(CommandType.KEYEVENT, "W", true);
-            this.keys.up = true;
+            this.player_one.keys.up = true;
         } else {
-            if (this.keys.up === true)
+            if (this.player_one.keys.up === true)
                 this.send_msg(CommandType.KEYEVENT, "W", false);
-            this.keys.up = false;
+            this.player_one.keys.up = false;
         }
         // down
-        if (this.keys.key_down.isDown) {
-            if (this.keys.down === false)
+        if (this.key_input.key_down.isDown) {
+            if (this.player_one.keys.down === false)
                 this.send_msg(CommandType.KEYEVENT, "S", true);
-            this.keys.down = true;
+            this.player_one.keys.down = true;
         } else {
-            if (this.keys.down === true)
+            if (this.player_one.keys.down === true)
                 this.send_msg(CommandType.KEYEVENT, "S", false);
-            this.keys.down = false;
+            this.player_one.keys.down = false;
         }
         // space(skill)
-        if (this.keys.key_space.isDown) {
-            if (this.keys.space === false)
+        if (this.key_input.key_space.isDown) {
+            if (this.player_one.keys.space === false)
                 this.send_msg(CommandType.KEYEVENT, "SPACE", true);
-            this.keys.space = true;
+            this.player_one.keys.space = true;
         } else {
-            if (this.keys.space === true)
+            if (this.player_one.keys.space === true)
                 this.send_msg(CommandType.KEYEVENT, "SPACE", false);
-            this.keys.space = false;
+            this.player_one.keys.space = false;
         }
     }
     update(time: number, delta: number) {
@@ -207,31 +255,13 @@ export class GameScene extends Phaser.Scene {
             this.scene.start("EndScene", { name: this.one_info.name });
             return;
         }
+        // movement and skill is done in each player's update()
         this.update_keys();
-        // movement 
-        let velo = new Phaser.Math.Vector2(0, 0);
-        if (this.keys.left) {
-            velo.x -= 1;
-        }
-        if (this.keys.right) {
-            velo.x += 1;
-        }
-        if (this.keys.up) {
-            velo.y -= 1;
-        }
-        if (this.keys.down) {
-            velo.y += 1;
-        }
-        velo.normalize(); // all-direction same speed
-        this.player_one.setVelocity(velo.x, velo.y);
         // update the pointer position relative to the camera,
         // in case the pointer is not moving and we get old screen position
-        const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
+        const ptx = this.input.activePointer.worldX;
+        const pty = this.input.activePointer.worldY;
         this.player_one.rotate_to(ptx, pty);
-        // skill
-        if (this.keys.space) {
-            this.player_one.skill();
-        }
     }
     /**
      * add a player to the scene
@@ -239,7 +269,9 @@ export class GameScene extends Phaser.Scene {
      * @param role player's role
      * @param team team number
      */
-    add_player(x: number, y: number, name: string, role: RoleType, team: number) {
+    add_player(
+        x: number, y: number,
+        name: string, role: RoleType, team: number) {
         if (team < 0 || team > 20) {
             console.error(`GameScene::add_player: invalid team id ${team}`);
         } else {
@@ -275,6 +307,7 @@ export class GameScene extends Phaser.Scene {
                 this.teams.push(tm);
             }
             this.teams[team].add(player);
+            this.players.set(player.info.name, player);
             // console.log("player", player.info.name, "in team", team, "real team", player.info.team);
             player.spawn();
             player.setCircle(30);
@@ -288,6 +321,7 @@ export class GameScene extends Phaser.Scene {
             } else {
                 player.name_text.setColor("#ff5555");
             }
+            return player;
         }
     }
     send_msg(tp: CommandType, key?: string, isDn?: boolean) {
@@ -309,8 +343,8 @@ export class GameScene extends Phaser.Scene {
         } else if (tp === CommandType.PTREVENT) {
             this.server.send_msg(tp, {
                 playerIf: this.one_info,
-                key: "NULL",
-                isDown: false,
+                key: key,
+                isDown: isDn,
                 playerPositionX: this.player_one.x,
                 playerPositionY: this.player_one.y,
                 MousePositionX: this.input.activePointer.worldX,
@@ -340,23 +374,22 @@ export class GameScene extends Phaser.Scene {
             console.error("unknown command type", tp);
         }
     }
-    shoot_event(pointer: Phaser.Input.Pointer) {
+    shoot_event(shooter: Player, x: number, y: number) {
         if (this.start === false) return;
         // generate bullet
-        const ptx = this.input.activePointer.worldX, pty = this.input.activePointer.worldY;
-        const pos = this.player_one.get_orient(ptx, pty).scale(30);
-        const bullet = this.player_one.shoot(this.player_one.x + pos.x, this.player_one.y + pos.y);
+        const ptx = x, pty = y;
+        const pos = shooter.get_orient(ptx, pty).scale(30);
+        const bullet = shooter.shoot(shooter.x + pos.x, shooter.y + pos.y);
         if (!bullet) return;
         // send command
-        this.send_msg(CommandType.PTREVENT, "LEFT", true);
         this.bullets.add(bullet, true);
         let velo: Phaser.Math.Vector2;
         if (bullet.damage > 30) {
             bullet.setScale(1.5);
-            velo = this.player_one.get_orient(ptx, pty).scale(400);
+            velo = shooter.get_orient(ptx, pty).scale(400);
             bullet.setVelocity(velo.x, velo.y);
         } else {
-            velo = this.player_one.get_orient(ptx, pty).scale(600);
+            velo = shooter.get_orient(ptx, pty).scale(600);
             bullet.setVelocity(velo.x, velo.y);
         }
         bullet.create_particle(this.add.particles("flares"));
@@ -376,7 +409,7 @@ export class GameScene extends Phaser.Scene {
             bullet.destroy(true);
         });
         this.teams.forEach((team, index) => {
-            if (this.player_one.info.team != index) {
+            if (shooter.info.team != index) {
                 // use overlap to avoid bullet pushing the hitted player
                 this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
                     // console.log("hitted player", player.info.name);

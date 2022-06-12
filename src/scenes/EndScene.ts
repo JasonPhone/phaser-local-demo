@@ -1,5 +1,5 @@
 import Phaser, { Physics, Scenes } from "phaser";
-import { KeyState, PlayerInfo, RoleType, CommandType, Command } from "../types/common";
+import { PlayerInfo, RoleType, CommandType, Command } from "../types/common";
 import Bullet from "../obj/Bullet";
 import { Room, Client } from "colyseus.js";
 import ServerSocket from "../obj/ServerSocket";

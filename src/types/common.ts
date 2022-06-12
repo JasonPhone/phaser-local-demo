@@ -1,22 +1,22 @@
 export enum RoleType {
-    NULL,
-    ADC,
-    SUP,
-    TNK
+    NULL, //  = "NULL",
+    ADC, // = "ADC",
+    SUP, // = "SUP",
+    TNK, // = "TNK"
 }
-export enum BuffType {
-    NULL,
-    RECOVER,
-    SHIELD
-}
-export class Buff {
-    public buff_tpye: BuffType = BuffType.NULL;
-    public base_val: number = 10;
-    constructor(tp: BuffType, val: number) {
-        this.buff_tpye = tp;
-        this.base_val = val;
-    }
-}
+// export enum BuffType {
+//     NULL,
+//     RECOVER,
+//     SHIELD
+// }
+// export class Buff {
+//     public buff_tpye: BuffType = BuffType.NULL;
+//     public base_val: number = 10;
+//     constructor(tp: BuffType, val: number) {
+//         this.buff_tpye = tp;
+//         this.base_val = val;
+//     }
+// }
 
 export class PlayerInfo {
     public name: string = "";
@@ -33,21 +33,16 @@ export class Command {
     MousePositionY: number;
 }
 export enum CommandType {
-    KEYEVENT= "keyevent",
-    PTREVENT= "pointerevent",
+    KEYEVENT = "keyevent",
+    PTREVENT = "pointerevent",
     SPAWN = "spawn",
     KILL = "kill"
 }
 
-export class KeyState {
-    left: boolean;
+export class KeyInput {
     key_left: Phaser.Input.Keyboard.Key;
-    right: boolean;
     key_right: Phaser.Input.Keyboard.Key;
-    up: boolean;
     key_up: Phaser.Input.Keyboard.Key;
-    down: boolean;
     key_down: Phaser.Input.Keyboard.Key;
-    space: boolean;
     key_space: Phaser.Input.Keyboard.Key;
 }

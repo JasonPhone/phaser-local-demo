@@ -1,5 +1,5 @@
 import Phaser, { Physics, Scenes } from "phaser";
-import { KeyState, PlayerInfo, RoleType, CommandType, Command } from "../types/common";
+import { PlayerInfo, RoleType, CommandType, Command } from "../types/common";
 import Bullet from "../obj/Bullet";
 import { Room, Client } from "colyseus.js";
 import ServerSocket from "../obj/ServerSocket";
@@ -42,7 +42,7 @@ export class WelcomeScene extends Phaser.Scene {
     }
     create(data: any) {
         console.log("WelcomeScene::create: scene created");
-        const {name} = data;
+        const { name } = data;
         this.player_info.name = name;
         this.player_info.team = 0;
         this.player_info.role = RoleType.ADC;
