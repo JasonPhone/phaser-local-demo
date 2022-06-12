@@ -56,17 +56,17 @@ export class GameScene extends Phaser.Scene {
         await this.server.connect();
         console.log("GameScene::create: server connected");
         /****** visual ******/
-        this.physics.world.fixedStep = false;  // or the health bar will glitch
         const dmap = this.make.tilemap({ key: "map_default" });
         const tiles = dmap.addTilesetImage("tileset_map", "tileset", 30, 30, 1, 2);
         const layer_ground = dmap.createLayer("ground", tiles, 0, 0);
         this.map_wall = dmap.createLayer("wall", tiles, 0, 0);
+        this.map_wall.setCollisionByProperty({ collides: true });
         this.cameras.main.setBounds(0, 0, dmap.widthInPixels, dmap.heightInPixels);
         this.cameras.main.roundPixels = true;
-        this.map_wall.setCollisionByProperty({ collides: true });
 
         this.cameras.main.zoom = 0.8;
         this.praticle_mngr = this.add.particles("flares");
+        this.physics.world.fixedStep = false;  // or the health bar will glitch
         console.log("GameScene::create: vfx done");
 
         /****** logic ******/
@@ -196,7 +196,6 @@ export class GameScene extends Phaser.Scene {
     }
     process_kill_msg(msg: Command) {
         if (this.start === false) return;
-        if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
         console.log(msg.playerIf.name, "died");
         const plr = this.players.get(msg.playerIf.name);
@@ -261,20 +260,20 @@ export class GameScene extends Phaser.Scene {
         if (time - this.start_time < 3000) return;
         else this.start = true;
         if (!this.player_one) return;
+        if (this.player_one.alive === false) {
+            // this player died 
+            this.send_msg(CommandType.KILL);
+            this.players.delete(this.one_info.name);
+            this.cameras.main.stopFollow();
+            this.start = false;
+        }
         const st = new Set<number>();
         this.players.forEach((plr: Player) => {
             st.add(plr.info.team);
         });
         let team_count = st.size;
-        // console.log("alive", alive_count);
-        // if (this.player_one.alive === false) {
-        if (this.player_one.alive === false || (team_count == 1 && time > 3000)) {
-            // this player died or is the only one
-            this.send_msg(CommandType.KILL);
-            this.cameras.main.stopFollow();
-            this.start = false;
+        if (team_count === 1) {
             this.scene.start("EndScene", { name: this.one_info.name , win: st.has(this.one_info.team)});
-            return;
         }
         // movement and skill is done in each player's update()
         this.update_keys();

@@ -46,18 +46,18 @@ export class EndScene extends Phaser.Scene {
             {
                 fontFamily: "宋体", fontSize: "60px"
             });
-        this.restart_text = this.add.text(220, 330, "重新开始",
-            {
-                fontFamily: "宋体",
-                fontSize: "30px",
-            }).setInteractive();
-        this.exit_text = this.add.text(520, 330, "退出",
+        // this.restart_text = this.add.text(220, 330, "重新开始",
+        //     {
+        //         fontFamily: "宋体",
+        //         fontSize: "30px",
+        //     }).setInteractive();
+        this.exit_text = this.add.text(370, 330, "退出",
             {
                 fontFamily: "宋体",
                 fontSize: "30px",
             }).setInteractive();
         this.click_events(this.exit_text, 0);
-        this.click_events(this.restart_text, 1);
+        // this.click_events(this.restart_text, 1);
     }
     goto_gamescene() {
         if (this.choose === 1) {
@@ -65,7 +65,7 @@ export class EndScene extends Phaser.Scene {
             this.scene.start("WelcomeScene", { name: this.nm });
         } else if (this.choose === 0) {
             // goto login scene
-            this.scene.start("LoginScene");
+            history.go(0);
         }
     }
     update(time: number, delta: number): void {

@@ -26,7 +26,5 @@ const config = {
     ]
 };
 const Game = new Phaser.Game(config);
-// Game.scene.start("WelcomeScene");
-// Game.scene.start("WelcomeScene");
 
 

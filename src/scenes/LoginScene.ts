@@ -75,16 +75,6 @@ export class LoginScene extends Phaser.Scene {
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 2) { // Login Success
-                            // const rnd = Math.random();  // get role type randomly
-                            // let role_tp = RoleType.NULL;
-                            // if (rnd <= 0.3) {
-                            //     role_tp = RoleType.ADC;
-                            // } else if (rnd <= 0.6) {
-                            //     role_tp = RoleType.SUP;
-                            // } else {
-                            //     role_tp = RoleType.TNK;
-                            // }
-                            // role_tp = RoleType.TNK;
                             self.scene.start("WelcomeScene", {name: inputUsername});
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
