@@ -10,8 +10,8 @@ import pngPlayerSUP from "../assets/sup_body.png";
 import pngPlayerTNK from "../assets/tank_body.png";
 import pngStar from "../assets/star.png";
 import pngBomb from "../assets/bomb.png";
-import jsonDefaultMap from "../assets/maps/map_default.json";
-import jsonMapTileSet from "../assets/maps/tileset_map.json";
+import jsonDefaultMap from "../assets/maps/map_small.json";
+// import jsonMapTileSet from "../assets/maps/tileset_map.json";
 import pngTileSetImg from "../assets/wall_bricks.png";
 import pngDude from "../assets/dude.png"
 import pngFlare from "../assets/particle/flares.png";
@@ -91,6 +91,9 @@ export class GameScene extends Phaser.Scene {
         console.log("GameScene::create: init keys done");
         // spawn player_one
         this.send_msg(CommandType.SPAWN);
+        // UI scene
+        this.scene.launch("UIScene", {player: this.player_one});
+        this.scene.bringToTop("UISCene");
     }
     init_keys() {
         this.key_input = new KeyInput();
@@ -273,7 +276,7 @@ export class GameScene extends Phaser.Scene {
         });
         let team_count = st.size;
         if (team_count === 1) {
-            this.scene.start("EndScene", { name: this.one_info.name , win: st.has(this.one_info.team)});
+            this.scene.start("EndScene", { name: this.one_info.name, win: st.has(this.one_info.team) });
         }
         // movement and skill is done in each player's update()
         this.update_keys();
@@ -295,6 +298,13 @@ export class GameScene extends Phaser.Scene {
         if (team < 0 || team > 20) {
             console.error(`GameScene::add_player: invalid team id ${team}`);
         } else {
+            if (team === 0) {
+                x = 900;
+                y = 300;
+            } else if (team === 1) {
+                x = 900;
+                y = 1500;
+            }
             let player: Player;
             // set texture
             switch (role) {

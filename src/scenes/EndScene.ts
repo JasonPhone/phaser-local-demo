@@ -1,21 +1,5 @@
 import Phaser, { Physics, Scenes } from "phaser";
-import { PlayerInfo, RoleType, CommandType, Command } from "../types/common";
-import Bullet from "../obj/Bullet";
-import { Room, Client } from "colyseus.js";
-import ServerSocket from "../obj/ServerSocket";
-
 import bg from "../assets/images/bluebg.png";
-import pngPlayerADC from "../assets/adc_body.png";
-import pngPlayerSUP from "../assets/sup_body.png";
-import pngPlayerTNK from "../assets/tank_body.png";
-// import pngStar from "../assets/star.png";
-// import pngBomb from "../assets/bomb.png";
-// import jsonDefaultMap from "../assets/maps/map_default.json";
-// import jsonMapTileSet from "../assets/maps/tileset_map.json";
-// import pngTileSetImg from "../assets/wall_bricks.png";
-// import pngDude from "../assets/dude.png"
-// import pngFlare from "../assets/particle/flares.png";
-// import jsonFlare from "../assets/particle/flares.json";
 
 export class EndScene extends Phaser.Scene {
     private exit_text: Phaser.GameObjects.Text;

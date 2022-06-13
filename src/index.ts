@@ -19,7 +19,7 @@ const config = {
         createContainer: true
     },
     scene: [
-        LoginScene, 
+        // LoginScene, 
         WelcomeScene,
         GameScene,
         EndScene
