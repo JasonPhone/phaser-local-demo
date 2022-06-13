@@ -3,6 +3,7 @@ import { GameScene } from "./scenes/GameScene";
 import { LoginScene } from "./scenes/LoginScene";
 import { WelcomeScene } from "./scenes/WelcomeScene";
 import { EndScene } from "./scenes/EndScene";
+import { UIScene } from "./scenes/UIScene";
 const config = {
     type: Phaser.WEBGL,
     width: 800,
@@ -19,9 +20,10 @@ const config = {
         createContainer: true
     },
     scene: [
-        // LoginScene, 
+        LoginScene, 
         WelcomeScene,
         GameScene,
+        UIScene,
         EndScene
     ]
 };

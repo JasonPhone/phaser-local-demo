@@ -149,6 +149,9 @@ export class GameScene extends Phaser.Scene {
         if (this.players.has(msg.playerIf.name) === false) return;
         console.log("keyevent", msg.playerIf.name, msg.key);
         const plr = this.players.get(msg.playerIf.name);
+        const msgx = msg.playerPositionX, msgy = msg.playerPositionY;
+        if ((msgx - plr.x) * (msgx - plr.x) + (msgy - plr.y) * (msgy - plr.y) > 100)
+            plr.setPosition(msgx, msgy);
         let velo = new Phaser.Math.Vector2(plr.body.velocity.x, plr.body.velocity.y);
         velo.normalize();
         if (msg.key === "W") {
