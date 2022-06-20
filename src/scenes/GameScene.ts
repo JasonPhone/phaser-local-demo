@@ -21,15 +21,20 @@ export class GameScene extends Phaser.Scene {
     private teams: Map<number, Phaser.Physics.Arcade.Group>;
     private player_one: Player;
     private players: Map<string, Player>;
+    private player_kill: Map<string, number>;
+    private player_death: Map<string, number>;
+    private one_spawn_CD: number = 0;
+    private team_goal: number = 3;
     private one_info: PlayerInfo;
     private bullets: Phaser.Physics.Arcade.Group;
     private cursor_keys: Phaser.Types.Input.Keyboard.CursorKeys;
     private map_wall: Phaser.Tilemaps.TilemapLayer;
     private server: ServerSocket;
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
-    private start: boolean = false;
+    private game_active: boolean = false;
     private start_time: number = 999999999999;
     private key_input: KeyInput;
+    private ui_scene: Phaser.Scene;
     constructor() {
         super({
             key: "GameScene"
@@ -72,6 +77,8 @@ export class GameScene extends Phaser.Scene {
         /****** logic ******/
         this.teams = new Map<number, Phaser.Physics.Arcade.Group>();
         this.players = new Map<string, Player>();
+        this.player_kill = new Map<string, number>();
+        this.player_death = new Map<string, number>();
 
         this.cursor_keys = this.input.keyboard.createCursorKeys();
         this.bullets = this.physics.add.group();
@@ -92,8 +99,44 @@ export class GameScene extends Phaser.Scene {
         // spawn player_one
         this.send_msg(CommandType.SPAWN);
         // UI scene
-        this.scene.launch("UIScene", {player: this.player_one});
+        this.scene.launch("UIScene", { player: this.one_info });
         this.scene.bringToTop("UISCene");
+        // this.ui_scene = this.scene.get("UIScene");
+        this.init_scene_msg();
+    }
+    init_scene_msg() {
+        this.events.on("kill", (data: any) => {
+            let killer = data.killer;
+            if (this.player_kill.has(killer) == false) {
+                this.player_kill.set(killer, 0);
+            }
+            let p = this.player_kill.get(killer) + 1;
+            this.player_kill.set(killer, p);
+            let victim = data.victim;
+            if (this.player_kill.has(victim) == false) {
+                this.player_kill.set(victim, 0);
+            }
+            p = this.player_death.get(victim) + 1;
+            this.player_death.set(victim, p);
+            console.log("player", killer, "got one, now", p);
+            this.events.emit("update_board", { kill: this.player_kill, death: this.player_death, players: this.players });
+        });
+        this.events.on("respawn", (data: any) => {
+            const info = data.info;
+            let x, y, team = info.team;
+            if (team === 0) {
+                x = 900;
+                y = 300;
+            } else if (team === 1) {
+                x = 900;
+                y = 1500;
+            }
+            const plr = this.players.get(info.name);
+            plr.spawn(new Phaser.Math.Vector2(x, y));
+            this.send_msg(CommandType.SPAWN);
+            console.log("player", info.name, "respawned", x, y);
+        });
+
     }
     init_keys() {
         this.key_input = new KeyInput();
@@ -118,9 +161,10 @@ export class GameScene extends Phaser.Scene {
         });
         // messages
         this.server.room.onMessage("start-game", (msg) => {
-            console.log("game now start!");
+            console.log("received start msg from server");
             // this.start = true;
             this.start_time = this.time.now;
+            this.events.emit("game_counting");
         });
         this.server.room.onMessage(CommandType.KEYEVENT, (msg: Command) => this.process_key_msg(msg));
         this.server.room.onMessage(CommandType.PTREVENT, (msg: Command) => this.process_ptr_msg(msg));
@@ -144,10 +188,9 @@ export class GameScene extends Phaser.Scene {
         });
     }
     process_key_msg(msg: Command) {
-        if (this.start === false) return;
         if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
-        console.log("keyevent", msg.playerIf.name, msg.key);
+        // console.log("keyevent", msg.playerIf.name, msg.key);
         const plr = this.players.get(msg.playerIf.name);
         const msgx = msg.playerPositionX, msgy = msg.playerPositionY;
         if ((msgx - plr.x) * (msgx - plr.x) + (msgy - plr.y) * (msgy - plr.y) > 100)
@@ -170,22 +213,25 @@ export class GameScene extends Phaser.Scene {
         plr.set_velo(velo.x, velo.y);
     }
     process_spawn_msg(msg: Command) {
-        if (this.start === false) return;
-        if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name)) {
             console.log("player", msg.playerIf.name, "respawned");
             const plr = this.players.get(msg.playerIf.name);
-            plr.setPosition(msg.playerPositionX, msg.playerPositionY);
-            plr.rotate_to(msg.MousePositionX, msg.MousePositionY);
+            let x, y;
+            if (msg.playerIf.team === 0) {
+                x = 900;
+                y = 300;
+            } else if (msg.playerIf.team === 1) {
+                x = 900;
+                y = 1500;
+            }
+            plr.spawn(new Phaser.Math.Vector2(x, y));
         } else {
             console.log("GameScene::process_spawn_msg: new player", msg.playerIf.name, "added");
-            console.log(this);
             const plr = this.add_player(400, 400, msg.playerIf.name, msg.playerIf.role, msg.playerIf.team);
             this.players.set(msg.playerIf.name, plr);
         }
     }
     process_ptr_msg(msg: Command) {
-        if (this.start === false) return;
         if (msg.playerIf.name === this.one_info.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
         // console.log("ptrevent", msg.playerIf.name, msg.key);
@@ -201,14 +247,14 @@ export class GameScene extends Phaser.Scene {
         }
     }
     process_kill_msg(msg: Command) {
-        if (this.start === false) return;
         if (this.players.has(msg.playerIf.name) === false) return;
-        console.log(msg.playerIf.name, "died");
+        console.log("kill message: ", msg.playerIf.name, "died");
         const plr = this.players.get(msg.playerIf.name);
         plr.kill();
-        this.players.delete(msg.playerIf.name);
+        if (msg.playerIf.name === this.one_info.name) this.one_spawn_CD = 3 * 1000;
     }
     update_keys() {
+        if (this.game_active == false) return;
         this.input.activePointer.updateWorldPoint(this.cameras.main);
         // keys event
         // left
@@ -263,23 +309,44 @@ export class GameScene extends Phaser.Scene {
         }
     }
     update(time: number, delta: number) {
-        if (time - this.start_time < 3000) return;
-        else this.start = true;
-        if (!this.player_one) return;
-        if (this.player_one.alive === false) {
-            // this player died 
-            this.send_msg(CommandType.KILL);
-            this.players.delete(this.one_info.name);
-            this.cameras.main.stopFollow();
-            this.start = false;
+        if (time - this.start_time < 3000) {
+            if (time > this.start_time)
+                this.events.emit("before_start", { time: time - this.start_time });
+            return;
         }
-        const st = new Set<number>();
-        this.players.forEach((plr: Player) => {
-            st.add(plr.info.team);
-        });
-        let team_count = st.size;
-        if (team_count === 1) {
-            this.scene.start("EndScene", { name: this.one_info.name, win: st.has(this.one_info.team) });
+        else {
+            if (this.game_active === false) {
+                this.events.emit("game_start");
+            }
+            this.game_active = true;
+        }
+        if (!this.player_one) return;
+        this.one_spawn_CD = Math.max(0, this.one_spawn_CD - delta);
+        if (this.player_one.alive && this.player_one.health.health <= 0) {
+            this.game_active = false;
+            this.cameras.main.stopFollow();
+            this.player_one.kill();
+            this.one_spawn_CD = 3 * 1000;
+            console.log("this player died");
+            this.send_msg(CommandType.KILL);
+        }
+        if (this.one_spawn_CD <= 0 && this.player_one.alive === false) {
+            this.cameras.main.startFollow(this.player_one);
+            console.log("this player respawned");
+            this.send_msg(CommandType.SPAWN);
+            let x, y;
+            if (this.one_info.team === 0) {
+                x = 900;
+                y = 300;
+            } else if (this.one_info.team === 1) {
+                x = 900;
+                y = 1500;
+            }
+            this.player_one.spawn(new Phaser.Math.Vector2(x, y));
+        }
+        let win_team = this.game_end();
+        if (win_team != -1) {
+            this.scene.start("EndScene", { name: this.one_info.name, win: win_team === this.one_info.team });
         }
         // movement and skill is done in each player's update()
         this.update_keys();
@@ -288,6 +355,21 @@ export class GameScene extends Phaser.Scene {
         const ptx = this.input.activePointer.worldX;
         const pty = this.input.activePointer.worldY;
         this.player_one.rotate_to(ptx, pty);
+    }
+    game_end() {
+        let team_points = new Map<number, number>();
+        this.player_kill.forEach((pts: number, plr: string) => {
+            let tem = this.players.get(plr).info.team;
+            if (team_points.has(tem) == false) team_points.set(tem, 0);
+            team_points.set(tem, team_points.get(tem) + pts);
+        });
+        let win_team = -1;
+        team_points.forEach((pts: number, tem: number) => {
+            if (pts >= this.team_goal) win_team = tem;
+        });
+        if (win_team === -1 && this.time.now - this.start_time > 300 * 1000)
+            return 2;
+        return win_team;
     }
     /**
      * add a player to the scene
@@ -345,7 +427,7 @@ export class GameScene extends Phaser.Scene {
             }
             this.players.set(player.info.name, player);
             // console.log("player", player.info.name, "in team", team, "real team", player.info.team);
-            player.spawn();
+            player.spawn(new Phaser.Math.Vector2(x, y));
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
             if (player.info.name === this.one_info.name) {
@@ -411,7 +493,7 @@ export class GameScene extends Phaser.Scene {
         }
     }
     shoot_event(shooter: Player, x: number, y: number) {
-        if (this.start === false) return;
+        if (this.game_active === false) return;
         // generate bullet
         const ptx = x, pty = y;
         const pos = shooter.get_orient(ptx, pty).scale(30);
@@ -422,10 +504,10 @@ export class GameScene extends Phaser.Scene {
         let velo: Phaser.Math.Vector2;
         if (bullet.damage > 30) {
             bullet.setScale(1.5);
-            velo = shooter.get_orient(ptx, pty).scale(400);
+            velo = shooter.get_orient(ptx, pty).scale(300);
             bullet.setVelocity(velo.x, velo.y);
         } else {
-            velo = shooter.get_orient(ptx, pty).scale(600);
+            velo = shooter.get_orient(ptx, pty).scale(400);
             bullet.setVelocity(velo.x, velo.y);
         }
         bullet.create_particle(this.add.particles("flares"));
@@ -458,9 +540,9 @@ export class GameScene extends Phaser.Scene {
                         blendMode: 'SCREEN',
                         lifespan: bullet.damage <= 10 ? 100 : 200,
                     });
+                    bullet.destroy(true);
                     emitter.explode(bullet.damage, bullet.x, bullet.y);
                     player.hitted(bullet);
-                    bullet.destroy(true);
                 });
             }
         });

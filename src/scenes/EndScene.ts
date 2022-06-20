@@ -9,7 +9,8 @@ export class EndScene extends Phaser.Scene {
     private choose: number = -1;
     constructor() {
         super({
-            key: "EndScene"
+            key: "EndScene",
+            active: false
         });
     }
 
@@ -21,6 +22,8 @@ export class EndScene extends Phaser.Scene {
         const { name, win } = data;
         this.nm = name;
         this.win = win;
+        this.scene.stop("GameScene");
+        this.scene.stop("UIScene");
         const img = this.add.image(0, 0, 'bg').setOrigin(0, 0);
         /****** team choose ******/
         const team_prompt_text = this.add.text(50, 50, "游戏结束", { fontFamily: "宋体", fontSize: "40px" });

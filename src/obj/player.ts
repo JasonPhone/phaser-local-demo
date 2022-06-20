@@ -7,8 +7,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     public info: PlayerInfo;
     public health: HealthBar;
     public buff_health: number = 0;
-    public skill_CD: number;
-    public shoot_CD: number;
+    public skill_CD: number = 0;
+    public shoot_CD: number = 0;
     public alive: boolean = false;
     public name_text: Phaser.GameObjects.Text;
     protected spd: number = 200;
@@ -41,6 +41,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     skill() {
         if (this.skill_CD > 0) return;
         this.skill_CD = 10 * 1000;
+        this.scene.events.emit("skill", {player: this.info});
         switch (this.info.role) {
             case RoleType.ADC:
                 /*
@@ -49,7 +50,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 */
                 this.atk *= 2;
                 this.skilled = true;
-                console.log("adc use a skill");
+                // console.log("adc use a skill");
                 this.particle_emitter.start();
                 break;
             case RoleType.SUP:
@@ -58,7 +59,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 - 技能：“代码领域”，一段时间内自身恢复一定血量
                 */
                 this.skilled = true;
-                console.log("sup use a skill");
+                // console.log("sup use a skill");
                 this.particle_emitter.start();
                 break;
             case RoleType.TNK:
@@ -68,13 +69,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
                 */
                 this.health.gain_shield(20);
                 this.skilled = true;
-                console.log("tnk use a skill");
+                // console.log("tnk use a skill");
                 break;
         }
     }
     hitted(bullet: Bullet) {
         let dmg = Math.max(0, bullet.damage - this.def);
         this.health.lose(dmg);
+        if (this.health.health <= 0) {
+            this.scene.events.emit("kill", { killer: bullet.player, victim: this.info.name });
+        }
     }
     rotate_to(x: number, y: number) {
         const ori = this.get_orient(x, y);
@@ -93,20 +97,24 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * @param pos the position to spawn this player
      */
     spawn(pos?: Phaser.Math.Vector2) {
-        this.addToDisplayList();
-        this.addToUpdateList();
         this.scene.add.existing(this); // add to display
         this.scene.physics.add.existing(this); // add this gameobject into simulation
         if (pos) {
             this.setPosition(pos.x, pos.y);
         }
         this.alive = true;
+        this.health.health = 100;
+        this.health.shield = 0;
     }
     kill() {
-        this.removeFromDisplayList();
-        this.removeFromUpdateList();
         this.setPosition(-100, -100);  // away from all collides
         this.alive = false;
+        this.skill_CD = 0;
+        this.shoot_CD = 0;
+        this.health.health = 0;
+        this.health.shield = 0;
+        this.health.draw(this.x, this.y);
+        this.name_text.setPosition(this.x - 40, this.y + 40);
     }
     create_particle(mngr: Phaser.GameObjects.Particles.ParticleEmitterManager) {
         this.particle_mngr = mngr;
@@ -185,17 +193,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * @param delta 
      */
     update(time: number, delta: number): void {
-        if (this.alive === false) return;
-        // if (time - this.tm > 2000) {
-        //     this.tm = time;
-        //     const x = Math.random() * 400 - 200;
-        //     const y = Math.random() * 400 - 200;
-        //     this.setVelocity(x, y);
-        // }
         /***** logic *****/
         this.skill_CD = Math.max(this.skill_CD - delta, 0);
         this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
-        if (this.health.health <= 0) this.kill();
+        if (this.alive === false) {
+            return;
+        }
         // ADC skill reset
         if (this.info.role === RoleType.ADC && this.skill_CD <= 6 * 1000 && this.skilled) {
             this.atk /= 2;
@@ -230,7 +233,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         /***** render *****/
         this.health.draw(this.x, this.y);
         this.name_text.setPosition(this.x - 40, this.y + 40);
-
     }
 
     get_orient(x: number, y: number): Phaser.Math.Vector2 {

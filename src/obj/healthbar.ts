@@ -68,9 +68,13 @@ export default class HealthBar {
         if (this.cur_shield > 0) {
             this.bar.fillStyle(0x999999);
             this.bar.fillRect(x + 2 + health_len, y + 2, shield_len, 4);
+            // this.bar.fillStyle(0xaaaaaa, 0.7);
+            // this.bar.fillCircle(x + 40, y - 30, 30);
         }
     }
-    get health() { return this.cur_health; }
     get maximum() { return this.max_health; }
+    get health() { return this.cur_health; }
+    set health(v: number) { this.cur_health = v; }
     get shield() { return this.cur_shield; }
+    set shield(v: number) { this.cur_shield= v; }
 }

@@ -79,7 +79,7 @@ export class WelcomeScene extends Phaser.Scene {
         // draw property
         this.draw_role_property();
 
-        this.start = this.add.text(310, 530, "开始游戏", { fontFamily: "宋体", fontSize: "45px" }).setInteractive();
+        this.start = this.add.text(350, 530, "继续", { fontFamily: "宋体", fontSize: "45px" }).setInteractive();
         this.start.on("pointerover", () => {
             this.start.setTint(0xdddddd);
         });
@@ -97,8 +97,7 @@ export class WelcomeScene extends Phaser.Scene {
     }
     goto_gamescene() {
         // GameScene needs playerinfo and server
-        this.scene.launch("GameScene", this.player_info);
-        // this.scene.stop("WelcomeScene");
+        this.scene.start("GameScene", this.player_info);
     }
     update(time: number, delta: number): void {
         // draw indicator
