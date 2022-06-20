@@ -69,7 +69,7 @@ export class LoginScene extends Phaser.Scene {
                 }
                 $.ajax({
                     type: "post",
-                    url: "http://81.68.250.183:2567/user/login",
+                    url: "http://81.68.250.183:8000/user/login",
                     async: true,
                     dataType: "json",
                     data: JSON.stringify(data),
@@ -148,7 +148,7 @@ export class LoginScene extends Phaser.Scene {
                 }
                 $.ajax({
                     type: "post",
-                    url: "http://81.68.250.183:2567/user/register",
+                    url: "http://81.68.250.183:8000/user/register",
                     async: true,
                     dataType: "json",
                     data: JSON.stringify(data),
