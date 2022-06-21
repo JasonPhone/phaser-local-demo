@@ -1,3 +1,4 @@
+// for import typing of typescript
 declare module "*.png" {
   const content: any;
   export default content;

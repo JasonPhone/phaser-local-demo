@@ -33,7 +33,7 @@ export class GameScene extends Phaser.Scene {
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
     private game_active: boolean = false;
     private game_start: boolean = false;
-    private start_time: number = 999999999999;
+    private start_time: number = 999999999;
     private key_input: KeyInput;
     private ui_scene: Phaser.Scene;
     constructor() {
@@ -166,6 +166,7 @@ export class GameScene extends Phaser.Scene {
         this.server.room.onMessage("start-game", (msg) => {
             // console.log("received start msg from server");
             // this.start = true;
+            if (this.start_time < 999999999) return;
             this.start_time = this.time.now;
             this.events.emit("game_counting");
         });
