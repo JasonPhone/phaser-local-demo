@@ -64,6 +64,7 @@ export class UIScene extends Phaser.Scene {
         this.init_game_msg();
     }
     init_game_text() {
+        console.log("UIScene::init text");
         // clear prompt
         this.prompt_bg.clear();
         this.prompt_text_content.setText("");
@@ -176,6 +177,7 @@ export class UIScene extends Phaser.Scene {
         team_1_str = team_1_str.length < 2 ? '0' + team_1_str : team_1_str;
         this.team_0_text.setText(team_0_str);
         this.team_1_text.setText(team_1_str);
+        console.log("UIScene::update_board", team_0_str, team_1_str);
     }
     update_skill() {
         // skill bar

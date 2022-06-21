@@ -32,6 +32,7 @@ export class GameScene extends Phaser.Scene {
     private server: ServerSocket;
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
     private game_active: boolean = false;
+    private game_start: boolean = false;
     private start_time: number = 999999999999;
     private key_input: KeyInput;
     private ui_scene: Phaser.Scene;
@@ -55,12 +56,12 @@ export class GameScene extends Phaser.Scene {
 
     async create(info: PlayerInfo) {
         this.one_info = info;
-        console.log("GameScene::create: got info name:", this.one_info.name, ", team:", this.one_info.team, ", role:", this.one_info.role);
+        // console.log("GameScene::create: got info name:", this.one_info.name, ", team:", this.one_info.team, ", role:", this.one_info.role);
         /****** server messages ******/
         this.server = new ServerSocket("ws://81.68.250.183:2567", "game-server");
         // this.server = new ServerSocket("ws://localhost:2567", "game-server");
         await this.server.connect();
-        console.log("GameScene::create: server connected");
+        // console.log("GameScene::create: server connected");
         /****** visual ******/
         const dmap = this.make.tilemap({ key: "map_default" });
         const tiles = dmap.addTilesetImage("tileset_map", "tileset", 30, 30, 1, 2);
@@ -73,7 +74,7 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.zoom = 0.8;
         this.praticle_mngr = this.add.particles("flares");
         this.physics.world.fixedStep = false;  // or the health bar will glitch
-        console.log("GameScene::create: vfx done");
+        // console.log("GameScene::create: vfx done");
 
         /****** logic ******/
         this.teams = new Map<number, Phaser.Physics.Arcade.Group>();
@@ -92,11 +93,11 @@ export class GameScene extends Phaser.Scene {
         this.input.on("pointermove", () => {
             this.send_msg(CommandType.PTREVENT, "MOVE", true);
         }, this);
-        console.log("GameScene::create: logic done");
+        // console.log("GameScene::create: logic done");
         this.init_with_server();
-        console.log("GameScene::create: init with server done");
+        // console.log("GameScene::create: init with server done");
         this.init_keys();
-        console.log("GameScene::create: init keys done");
+        // console.log("GameScene::create: init keys done");
         // spawn player_one
         this.send_msg(CommandType.SPAWN);
         // UI scene
@@ -108,18 +109,19 @@ export class GameScene extends Phaser.Scene {
     init_scene_msg() {
         this.events.on("kill", (data: any) => {
             let killer = data.killer;
-            if (this.player_kill.has(killer) == false) {
+            if (this.player_kill.has(killer) === false) {
                 this.player_kill.set(killer, 0);
             }
             let p = this.player_kill.get(killer) + 1;
             this.player_kill.set(killer, p);
+            console.log("local::player", killer, "got one, now", p);
             let victim = data.victim;
-            if (this.player_kill.has(victim) == false) {
-                this.player_kill.set(victim, 0);
+            if (this.player_death.has(victim) === false) {
+                this.player_death.set(victim, 0);
             }
             p = this.player_death.get(victim) + 1;
             this.player_death.set(victim, p);
-            console.log("player", killer, "got one, now", p);
+            console.log("killer", killer, ", victim", victim);
             this.events.emit("update_board", { kill: this.player_kill, death: this.player_death, players: this.players });
         });
         this.events.on("respawn", (data: any) => {
@@ -135,7 +137,7 @@ export class GameScene extends Phaser.Scene {
             const plr = this.players.get(info.name);
             plr.spawn(new Phaser.Math.Vector2(x, y));
             this.send_msg(CommandType.SPAWN);
-            console.log("player", info.name, "respawned", x, y);
+            console.log("local::player", info.name, "respawned", x, y);
         });
 
     }
@@ -215,7 +217,7 @@ export class GameScene extends Phaser.Scene {
     }
     process_spawn_msg(msg: Command) {
         if (this.players.has(msg.playerIf.name)) {
-            console.log("player", msg.playerIf.name, "respawned");
+            console.log("server::player", msg.playerIf.name, "respawned");
             const plr = this.players.get(msg.playerIf.name);
             let x, y;
             if (msg.playerIf.team === 0) {
@@ -227,7 +229,7 @@ export class GameScene extends Phaser.Scene {
             }
             plr.spawn(new Phaser.Math.Vector2(x, y));
         } else {
-            console.log("GameScene::process_spawn_msg: new player", msg.playerIf.name, "added");
+            console.log("server::new player", msg.playerIf.name, "added");
             const plr = this.add_player(400, 400, msg.playerIf.name, msg.playerIf.role, msg.playerIf.team);
             this.players.set(msg.playerIf.name, plr);
         }
@@ -249,7 +251,7 @@ export class GameScene extends Phaser.Scene {
     }
     process_kill_msg(msg: Command) {
         if (this.players.has(msg.playerIf.name) === false) return;
-        console.log("kill message: ", msg.playerIf.name, "died");
+        console.log("server::", msg.playerIf.name, "died");
         const plr = this.players.get(msg.playerIf.name);
         plr.kill();
         if (msg.playerIf.name === this.one_info.name) this.one_spawn_CD = 3 * 1000;
@@ -316,10 +318,11 @@ export class GameScene extends Phaser.Scene {
             return;
         }
         else {
-            if (this.game_active === false) {
+            if (this.game_start === false && this.game_active === false) {
                 this.events.emit("game_start");
             }
             this.game_active = true;
+            this.game_start = true;
         }
         if (!this.player_one) return;
         this.one_spawn_CD = Math.max(0, this.one_spawn_CD - delta);
@@ -328,12 +331,12 @@ export class GameScene extends Phaser.Scene {
             this.cameras.main.stopFollow();
             this.player_one.kill();
             this.one_spawn_CD = 3 * 1000;
-            console.log("this player died");
+            // console.log("this player died");
             this.send_msg(CommandType.KILL);
         }
         if (this.one_spawn_CD <= 0 && this.player_one.alive === false) {
             this.cameras.main.startFollow(this.player_one);
-            console.log("this player respawned");
+            // console.log("this player respawned");
             this.send_msg(CommandType.SPAWN);
             let x, y;
             if (this.one_info.team === 0) {
