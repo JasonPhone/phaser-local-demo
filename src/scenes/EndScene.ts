@@ -18,7 +18,7 @@ export class EndScene extends Phaser.Scene {
         this.load.image('bg', bg);
     }
     create(data: any) {
-        console.log("EndScene::create: scene created");
+        // console.log("EndScene::create: scene created");
         const { name, win } = data;
         this.nm = name;
         this.win = win;

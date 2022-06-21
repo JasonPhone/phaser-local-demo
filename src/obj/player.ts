@@ -145,7 +145,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     init_property() {
         this.health = new HealthBar(this.scene, this.x, this.y);
         this.skill_CD = 0;
-        console.log("Player::init_property: name", this.info.name);
+        // console.log("Player::init_property: name", this.info.name);
         this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.info.name.substring(0, 8));
         this.name_text.setFontFamily('Arial').setFontSize(20).setColor("#ffffff").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
         switch (this.info.role) {

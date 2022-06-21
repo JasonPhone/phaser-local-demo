@@ -27,7 +27,7 @@ export class LoginScene extends Phaser.Scene {
 
         registerformElement.setVisible(false);
 
-        var startText = this.add.text(10, 10, 'Please Login to Play', { color: 'white', fontFamily: 'Arial', fontSize: '32px' });
+        var startText = this.add.text(10, 10, '请登录', { color: 'white', fontFamily: 'Arial', fontSize: '32px' });
 
         const self = this;
 
@@ -40,7 +40,7 @@ export class LoginScene extends Phaser.Scene {
                 loginformElement.setVisible(false);
                 registerformElement.setVisible(true);
                 this.scene.tweens.add({ targets: registerformElement.rotate3d, x: 1, w: 360, duration: 1200, ease: 'Power3' });
-                startText.setText('Please Register to Play');
+                startText.setText('注册账号');
                 this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
             }
 
@@ -108,7 +108,7 @@ export class LoginScene extends Phaser.Scene {
                 registerformElement.setVisible(false);
                 loginformElement.setVisible(true);
                 this.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 1200, ease: 'Power3' });
-                startText.setText('Please Login to Play');
+                startText.setText('请登录');
                 this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
             }
 

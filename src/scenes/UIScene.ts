@@ -29,7 +29,7 @@ export class UIScene extends Phaser.Scene {
         super({ key: "UIScene", active: false });  // scene id
     }
     create(data: any) {
-        console.log("UIScene::create: ok");
+        // console.log("UIScene::create: ok");
         this.player = data.player;
         this.game_scene = this.scene.get("GameScene");
         this.dbg_text = this.add.text(
@@ -64,7 +64,7 @@ export class UIScene extends Phaser.Scene {
         this.init_game_msg();
     }
     init_game_text() {
-        console.log("UIScene::init text");
+        // console.log("UIScene::init text");
         // clear prompt
         this.prompt_bg.clear();
         this.prompt_text_content.setText("");
@@ -170,14 +170,14 @@ export class UIScene extends Phaser.Scene {
                 team_1_kill += kill_count;
             }
         });
-        console.log(team_0_kill, team_1_kill);
+        // console.log(team_0_kill, team_1_kill);
         let team_0_str = team_0_kill.toString();
         let team_1_str = team_1_kill.toString();
         team_0_str = team_0_str.length < 2 ? '0' + team_0_str : team_0_str;
         team_1_str = team_1_str.length < 2 ? '0' + team_1_str : team_1_str;
         this.team_0_text.setText(team_0_str);
         this.team_1_text.setText(team_1_str);
-        console.log("UIScene::update_board", team_0_str, team_1_str);
+        // console.log("UIScene::update_board", team_0_str, team_1_str);
     }
     update_skill() {
         // skill bar

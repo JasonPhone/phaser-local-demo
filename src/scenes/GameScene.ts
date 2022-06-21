@@ -114,14 +114,14 @@ export class GameScene extends Phaser.Scene {
             }
             let p = this.player_kill.get(killer) + 1;
             this.player_kill.set(killer, p);
-            console.log("local::player", killer, "got one, now", p);
+            // console.log("local::player", killer, "got one, now", p);
             let victim = data.victim;
             if (this.player_death.has(victim) === false) {
                 this.player_death.set(victim, 0);
             }
             p = this.player_death.get(victim) + 1;
             this.player_death.set(victim, p);
-            console.log("killer", killer, ", victim", victim);
+            // console.log("killer", killer, ", victim", victim);
             this.events.emit("update_board", { kill: this.player_kill, death: this.player_death, players: this.players });
         });
         this.events.on("respawn", (data: any) => {
@@ -137,7 +137,7 @@ export class GameScene extends Phaser.Scene {
             const plr = this.players.get(info.name);
             plr.spawn(new Phaser.Math.Vector2(x, y));
             this.send_msg(CommandType.SPAWN);
-            console.log("local::player", info.name, "respawned", x, y);
+            // console.log("local::player", info.name, "respawned", x, y);
         });
 
     }
@@ -160,11 +160,11 @@ export class GameScene extends Phaser.Scene {
             }
             const plr = this.add_player(400, 400, player_entry.name, player_entry.role, player_entry.team);
             this.players.set(player_entry.name, plr);
-            console.log(player_entry.name, "role:", player_entry.role, "team:", player_entry.team);
+            // console.log(player_entry.name, "role:", player_entry.role, "team:", player_entry.team);
         });
         // messages
         this.server.room.onMessage("start-game", (msg) => {
-            console.log("received start msg from server");
+            // console.log("received start msg from server");
             // this.start = true;
             this.start_time = this.time.now;
             this.events.emit("game_counting");
@@ -185,7 +185,7 @@ export class GameScene extends Phaser.Scene {
         const plrs = state.players;
         plrs.forEach((plr: PlayerInfo) => {
             if (!this.players.has(plr.name)) {
-                console.log("GameScene::process_state_changed:", plr.name, plr.team, plr.role, "joined");
+                // console.log("GameScene::process_state_changed:", plr.name, plr.team, plr.role, "joined");
                 this.add_player(400, 400, plr.name, plr.role, plr.team);
             }
         });
@@ -217,7 +217,7 @@ export class GameScene extends Phaser.Scene {
     }
     process_spawn_msg(msg: Command) {
         if (this.players.has(msg.playerIf.name)) {
-            console.log("server::player", msg.playerIf.name, "respawned");
+            // console.log("server::player", msg.playerIf.name, "respawned");
             const plr = this.players.get(msg.playerIf.name);
             let x, y;
             if (msg.playerIf.team === 0) {
@@ -229,7 +229,7 @@ export class GameScene extends Phaser.Scene {
             }
             plr.spawn(new Phaser.Math.Vector2(x, y));
         } else {
-            console.log("server::new player", msg.playerIf.name, "added");
+            // console.log("server::new player", msg.playerIf.name, "added");
             const plr = this.add_player(400, 400, msg.playerIf.name, msg.playerIf.role, msg.playerIf.team);
             this.players.set(msg.playerIf.name, plr);
         }
@@ -251,7 +251,7 @@ export class GameScene extends Phaser.Scene {
     }
     process_kill_msg(msg: Command) {
         if (this.players.has(msg.playerIf.name) === false) return;
-        console.log("server::", msg.playerIf.name, "died");
+        // console.log("server::", msg.playerIf.name, "died");
         const plr = this.players.get(msg.playerIf.name);
         plr.kill();
         if (msg.playerIf.name === this.one_info.name) this.one_spawn_CD = 3 * 1000;

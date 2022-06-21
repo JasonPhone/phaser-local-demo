@@ -41,7 +41,7 @@ export class WelcomeScene extends Phaser.Scene {
         this.load.image("playerTNK", pngPlayerTNK);
     }
     create(data: any) {
-        console.log("WelcomeScene::create: scene created");
+        // console.log("WelcomeScene::create: scene created");
         const { name } = data;
         this.player_info.name = name ? name : (Math.random() * 5).toString().substring(0, 5);
         this.player_info.team = 0;
