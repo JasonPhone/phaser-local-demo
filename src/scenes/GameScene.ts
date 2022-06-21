@@ -27,7 +27,6 @@ export class GameScene extends Phaser.Scene {
     private team_goal: number = 3;
     private one_info: PlayerInfo;
     private bullets: Phaser.Physics.Arcade.Group;
-    private cursor_keys: Phaser.Types.Input.Keyboard.CursorKeys;
     private map_wall: Phaser.Tilemaps.TilemapLayer;
     private server: ServerSocket;
     private praticle_mngr: Phaser.GameObjects.Particles.ParticleEmitterManager;
@@ -35,7 +34,6 @@ export class GameScene extends Phaser.Scene {
     private game_start: boolean = false;
     private start_time: number = 999999999;
     private key_input: KeyInput;
-    private ui_scene: Phaser.Scene;
     constructor() {
         super({
             key: "GameScene"
@@ -82,7 +80,6 @@ export class GameScene extends Phaser.Scene {
         this.player_kill = new Map<string, number>();
         this.player_death = new Map<string, number>();
 
-        this.cursor_keys = this.input.keyboard.createCursorKeys();
         this.bullets = this.physics.add.group();
 
         this.input.on("pointerdown", () => {
@@ -103,7 +100,6 @@ export class GameScene extends Phaser.Scene {
         // UI scene
         this.scene.launch("UIScene", { player: this.one_info });
         this.scene.bringToTop("UISCene");
-        // this.ui_scene = this.scene.get("UIScene");
         this.init_scene_msg();
     }
     init_scene_msg() {
@@ -552,5 +548,4 @@ export class GameScene extends Phaser.Scene {
             }
         });
     }
-
 };
