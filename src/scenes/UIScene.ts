@@ -23,6 +23,7 @@ export class UIScene extends Phaser.Scene {
     private prompt_text_content: Phaser.GameObjects.Text;
     private prompt_bg: Phaser.GameObjects.Graphics;
     private player: PlayerInfo;
+    private respawn_CD: number = 0;
 
     private start_time: number = 999999999;
     constructor() {
@@ -131,10 +132,28 @@ export class UIScene extends Phaser.Scene {
         this.game_scene.events.on("update_board", (data: any) => {
             this.update_board(data);
         }, this);
+        this.game_scene.events.on("kill", (data: any) => {
+            if (this.player.name === data.victim) {
+                // console.log("me died");
+                this.respawn_CD = 3 * 1000;
+            }
+        }, this);
     }
     update(time: number, delta: number): void {
         if (this.ui_active === false) {
             return;
+        }
+        /****** respawn ******/
+        if (this.respawn_CD > 0) {
+            this.respawn_CD = Math.max(0, this.respawn_CD - delta);
+            this.prompt_bg.clear();
+            this.prompt_bg.fillStyle(0x333333, 0.8);
+            this.prompt_bg.fillRect(0, 0, 800, 600);
+            let cd = Math.ceil(this.respawn_CD / 1000);
+            this.prompt_text_title.setText(cd.toString() + "秒后复活");
+        } else {
+            this.prompt_bg.clear();
+            this.prompt_text_title.setText("");
         }
         /****** skill cd ******/
         this.skill_cd = Math.max(this.skill_cd - delta, 0);
