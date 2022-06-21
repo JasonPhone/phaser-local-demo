@@ -61,7 +61,7 @@ export class GameScene extends Phaser.Scene {
         this.server = new ServerSocket("ws://81.68.250.183:2567", "game-server");
         // this.server = new ServerSocket("ws://localhost:2567", "game-server");
         await this.server.connect();
-        // console.log("GameScene::create: server connected");
+        console.log("GameScene::create: server connected", this.server.room.id);
         /****** visual ******/
         const dmap = this.make.tilemap({ key: "map_default" });
         const tiles = dmap.addTilesetImage("tileset_map", "tileset", 30, 30, 1, 2);
