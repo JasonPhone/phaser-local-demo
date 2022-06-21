@@ -57,7 +57,8 @@ export class GameScene extends Phaser.Scene {
         this.one_info = info;
         console.log("GameScene::create: got info name:", this.one_info.name, ", team:", this.one_info.team, ", role:", this.one_info.role);
         /****** server messages ******/
-        this.server = new ServerSocket("ws://localhost:2567", "game-server");
+        this.server = new ServerSocket("ws://81.68.250.183:2567", "game-server");
+        // this.server = new ServerSocket("ws://localhost:2567", "game-server");
         await this.server.connect();
         console.log("GameScene::create: server connected");
         /****** visual ******/
