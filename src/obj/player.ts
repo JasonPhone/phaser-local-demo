@@ -77,6 +77,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         let dmg = Math.max(0, bullet.damage - this.def);
         this.health.lose(dmg);
         if (this.health.health <= 0) {
+            // this.kill();
             this.scene.events.emit("kill", { killer: bullet.player, victim: this.info.name});
         }
     }

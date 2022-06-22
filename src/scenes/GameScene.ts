@@ -247,6 +247,7 @@ export class GameScene extends Phaser.Scene {
         }
     }
     process_kill_msg(msg: Command) {
+        // if (this.one_info.name === msg.playerIf.name) return;
         if (this.players.has(msg.playerIf.name) === false) return;
         // console.log("server::", msg.playerIf.name, "died");
         const plr = this.players.get(msg.playerIf.name);
