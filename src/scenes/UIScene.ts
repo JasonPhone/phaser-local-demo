@@ -191,14 +191,14 @@ export class UIScene extends Phaser.Scene {
                 team_1_kill += kill_count;
             }
         });
-        // console.log(team_0_kill, team_1_kill);
+        console.log(team_0_kill, team_1_kill);
         let team_0_str = team_0_kill.toString();
         let team_1_str = team_1_kill.toString();
         team_0_str = team_0_str.length < 2 ? '0' + team_0_str : team_0_str;
         team_1_str = team_1_str.length < 2 ? '0' + team_1_str : team_1_str;
         this.team_0_text.setText(team_0_str);
         this.team_1_text.setText(team_1_str);
-        // console.log("UIScene::update_board", team_0_str, team_1_str);
+        console.log("UIScene::update_board", team_0_str, team_1_str);
     }
     update_skill() {
         // skill bar
