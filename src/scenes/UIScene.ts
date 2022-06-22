@@ -156,6 +156,7 @@ export class UIScene extends Phaser.Scene {
             this.prompt_bg.clear();
             this.prompt_text_title.setText("");
         }
+        this.prompt_text_title.setText("");
         /****** skill cd ******/
         this.skill_cd = Math.max(this.skill_cd - delta, 0);
         /****** game time ******/
