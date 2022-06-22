@@ -33,7 +33,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      */
     shoot(posx: number, posy: number, damage: number = 20) {
         if (this.shoot_CD > 0) return undefined;
-        this.shoot_CD = 0.2 * 1000;
+        this.shoot_CD = 0.25 * 1000;
         const blt = new Bullet({ damage: this.atk, player: this.info.name, team: this.info.team },
             { scene: this.scene, x: posx, y: posy, texture: "bomb" });
         return blt;
@@ -78,6 +78,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.health.lose(dmg);
         if (this.health.health <= 0) {
             // this.kill();
+            this.setPosition(-100, -100);
+            this.scene.cameras.main.stopFollow();
             this.scene.events.emit("kill", { killer: bullet.player, victim: this.info.name});
         }
     }
