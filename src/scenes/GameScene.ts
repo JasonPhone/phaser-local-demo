@@ -117,7 +117,7 @@ export class GameScene extends Phaser.Scene {
             }
             p = this.player_death.get(victim) + 1;
             this.player_death.set(victim, p);
-            // console.log("killer", killer, ", victim", victim);
+            console.log("killer", killer, ", victim", victim);
             this.events.emit("update_board", { kill: this.player_kill, death: this.player_death, players: this.players });
         });
         this.events.on("respawn", (data: any) => {
