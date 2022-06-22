@@ -531,7 +531,7 @@ export class GameScene extends Phaser.Scene {
             if (shooter.info.team != index) {
                 // use overlap to avoid bullet pushing the hitted player
                 this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
-                    // console.log("hitted player", player.info.name);
+                    console.log(this.one_info.name, "hitted player", player.info.name);
                     // a explode vfx
                     let emitter = this.praticle_mngr.createEmitter({
                         frame: ["white", "red"],
