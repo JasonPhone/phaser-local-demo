@@ -104,6 +104,9 @@ export class GameScene extends Phaser.Scene {
     }
     init_scene_msg() {
         this.events.on("kill", (data: any) => {
+            if (this.one_info.name === data.victim) {
+                this.cameras.main.stopFollow();
+            }
             let killer = data.killer;
             if (this.player_kill.has(killer) === false) {
                 this.player_kill.set(killer, 0);
