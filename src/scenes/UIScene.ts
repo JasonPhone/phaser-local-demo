@@ -111,6 +111,7 @@ export class UIScene extends Phaser.Scene {
         }, this);
         this.game_scene.events.on("before_start", (data: any) => {
             // update the counting 
+            if (this.start_time < 999999999) return;
             let { time } = data;
             time = 4 - Math.ceil(time / 1000);
             this.prompt_text_title.setText(time.toString() + "秒后开始");
