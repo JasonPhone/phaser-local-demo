@@ -11,7 +11,7 @@ export default class Bullet extends Phaser.Physics.Arcade.Sprite {
         this.player = info.player;
         this.team = info.team;
     }
-    destroy(fromScene?: boolean): void {
+    destroy(fromScene?: boolean) {
         super.destroy(fromScene);
         this.particle_mngr.destroy(fromScene);
     }

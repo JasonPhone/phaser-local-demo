@@ -24,6 +24,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         down: false,
         space: false,
     }
+    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
+        const { scene, x, y, texture } = data;
+        super(scene, x, y, texture);
+        // this.scene is set in super()
+        this.info = info;
+        this.init_property();
+    }
     /**
      * player shoot a bullet
      * @param posx position to shoot at
@@ -88,7 +95,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         // rotation angle, but between angle has a difference of 90 deg, due to different start direction
         this.setRotation(player_angle + Phaser.Math.DegToRad(90));
     }
-    setVelocity(x: number, y?: number): this {
+    setVelocity(x: number, y?: number) {
         let velo = new Phaser.Math.Vector2(x, y).normalize().scale(this.spd);
         super.setVelocity(velo.x, velo.y);
         return this;
@@ -135,13 +142,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             frequency: 30,
             follow: this
         }).stop();
-    }
-    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
-        const { scene, x, y, texture } = data;
-        super(scene, x, y, texture);
-        // this.scene is set in super()
-        this.info = info;
-        this.init_property();
     }
     init_property() {
         this.health = new HealthBar(this.scene, this.x, this.y);
@@ -193,7 +193,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
      * @param time 
      * @param delta 
      */
-    update(time: number, delta: number): void {
+    update(time: number, delta: number) {
         /***** logic *****/
         this.skill_CD = Math.max(this.skill_CD - delta, 0);
         this.shoot_CD = Math.max(this.shoot_CD - delta, 0);
@@ -235,7 +235,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.health.draw(this.x, this.y);
         this.name_text.setPosition(this.x - 40, this.y + 40);
     }
-
     get_orient(x: number, y: number): Phaser.Math.Vector2 {
         return new Phaser.Math.Vector2(x - this.x, y - this.y).normalize();
     }

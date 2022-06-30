@@ -1,12 +1,6 @@
 import { Client, Room } from "colyseus.js";
 import { PlayerInfo, RoleType, Command } from "../types/common";
-/*
-    message types:
-    keydown
-    pointermove
-    kill
-    spawn
-*/
+
 export default class ServerSocket {
     private client_: Client;
     private room_: Room;
@@ -26,23 +20,9 @@ export default class ServerSocket {
      */
     get_players() {
         let player_list = new Array<PlayerInfo>();
-        // player_list.push(
-        //     { name: "jason", team: 0, role: RoleType.ADC }
-        // );
-        // player_list.push(
-        //     { name: "ally", team: 0, role: RoleType.SUP }
-        // );
-        // player_list.push(
-        //     { name: "enemy", team: 1, role: RoleType.TNK }
-        // );
         return player_list;
     }
     send_msg(type: string, msg: Command) {
-
-        //     KEYEVENT= "keyevent",
-        //     PTREVENT= "pointerevent",
-        //     SPWAN = "spawn",
-        //     KILL = "kill"
         this.room_.send(type, msg);
     }
 
