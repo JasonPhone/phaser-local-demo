@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-
 export default class HealthBar {
     private cur_health: number;
     private max_health: number;

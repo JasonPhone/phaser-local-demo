@@ -54,7 +54,6 @@ export class GameScene extends Phaser.Scene {
 
     async create(info: PlayerInfo) {
         this.one_info = info;
-        // console.log("GameScene::create: got info name:", this.one_info.name, ", team:", this.one_info.team, ", role:", this.one_info.role);
         /****** server messages ******/
         this.server = new ServerSocket("ws://81.68.250.183:2567", "game-server");
         // this.server = new ServerSocket("ws://localhost:2567", "game-server");
@@ -85,7 +84,10 @@ export class GameScene extends Phaser.Scene {
         this.input.on("pointerdown", () => {
             this.send_msg(CommandType.PTREVENT, "LEFT", true);
             this.input.activePointer.updateWorldPoint(this.cameras.main);
-            this.shoot_event(this.player_one, this.input.activePointer.worldX, this.input.activePointer.worldY);
+            this.shoot_event(
+                this.player_one, 
+                this.input.activePointer.worldX, 
+                this.input.activePointer.worldY);
         }, this);
         this.input.on("pointermove", () => {
             this.send_msg(CommandType.PTREVENT, "MOVE", true);
@@ -121,7 +123,13 @@ export class GameScene extends Phaser.Scene {
             p = this.player_death.get(victim) + 1;
             this.player_death.set(victim, p);
             console.log("killer", killer, ", victim", victim);
-            this.events.emit("update_board", { kill: this.player_kill, death: this.player_death, players: this.players });
+            this.events.emit(
+                "update_board", 
+                { 
+                    kill: this.player_kill, 
+                    death: this.player_death, 
+                    players: this.players 
+                });
         });
         this.events.on("respawn", (data: any) => {
             const info = data.info;
@@ -157,9 +165,12 @@ export class GameScene extends Phaser.Scene {
                 this.one_info.role = player_entry.role;
                 this.one_info.team = player_entry.team;
             }
-            const plr = this.add_player(400, 400, player_entry.name, player_entry.role, player_entry.team);
+            const plr = this.add_player(
+                400, 400, 
+                player_entry.name, 
+                player_entry.role, 
+                player_entry.team);
             this.players.set(player_entry.name, plr);
-            // console.log(player_entry.name, "role:", player_entry.role, "team:", player_entry.team);
         });
         // messages
         this.server.room.onMessage("start-game", (msg) => {
@@ -169,10 +180,18 @@ export class GameScene extends Phaser.Scene {
             this.start_time = this.time.now;
             this.events.emit("game_counting");
         });
-        this.server.room.onMessage(CommandType.KEYEVENT, (msg: Command) => this.process_key_msg(msg));
-        this.server.room.onMessage(CommandType.PTREVENT, (msg: Command) => this.process_ptr_msg(msg));
-        this.server.room.onMessage(CommandType.KILL, (msg: Command) => this.process_kill_msg(msg));
-        this.server.room.onMessage(CommandType.SPAWN, (msg: Command) => this.process_spawn_msg(msg));
+        this.server.room.onMessage(
+            CommandType.KEYEVENT, 
+            (msg: Command) => this.process_key_msg(msg));
+        this.server.room.onMessage(
+            CommandType.PTREVENT, 
+            (msg: Command) => this.process_ptr_msg(msg));
+        this.server.room.onMessage(
+            CommandType.KILL, 
+            (msg: Command) => this.process_kill_msg(msg));
+        this.server.room.onMessage(
+            CommandType.SPAWN, 
+            (msg: Command) => this.process_spawn_msg(msg));
         // state updates
         this.server.room.onStateChange.once(
             (state: GameState) => this.process_state_changed(state)
@@ -185,7 +204,6 @@ export class GameScene extends Phaser.Scene {
         const plrs = state.players;
         plrs.forEach((plr: PlayerInfo) => {
             if (!this.players.has(plr.name)) {
-                // console.log("GameScene::process_state_changed:", plr.name, plr.team, plr.role, "joined");
                 this.add_player(400, 400, plr.name, plr.role, plr.team);
             }
         });
@@ -230,7 +248,11 @@ export class GameScene extends Phaser.Scene {
             plr.spawn(new Phaser.Math.Vector2(x, y));
         } else {
             // console.log("server::new player", msg.playerIf.name, "added");
-            const plr = this.add_player(400, 400, msg.playerIf.name, msg.playerIf.role, msg.playerIf.team);
+            const plr = this.add_player(
+                400, 400, 
+                msg.playerIf.name, 
+                msg.playerIf.role, 
+                msg.playerIf.team);
             this.players.set(msg.playerIf.name, plr);
         }
     }
@@ -351,7 +373,12 @@ export class GameScene extends Phaser.Scene {
         }
         let win_team = this.game_end();
         if (win_team != -1) {
-            this.scene.start("EndScene", { name: this.one_info.name, win: win_team === this.one_info.team });
+            this.scene.start(
+                "EndScene", 
+                { 
+                    name: this.one_info.name, 
+                    win: win_team === this.one_info.team 
+                });
         }
         // movement and skill is done in each player's update()
         this.update_keys();
@@ -431,7 +458,6 @@ export class GameScene extends Phaser.Scene {
                 this.teams.set(team, tm);
             }
             this.players.set(player.info.name, player);
-            // console.log("player", player.info.name, "in team", team, "real team", player.info.team);
             player.spawn(new Phaser.Math.Vector2(x, y));
             player.setCircle(30);
             this.physics.add.collider(player, this.map_wall);
@@ -517,7 +543,9 @@ export class GameScene extends Phaser.Scene {
         }
         bullet.create_particle(this.add.particles("flares"));
         // a particle emitter
-        this.physics.add.collider(bullet, this.map_wall, (bullet: Bullet, layer_wall: any) => {
+        this.physics.add.collider(
+            bullet, this.map_wall, 
+            (bullet: Bullet, layer_wall: any) => {
             // console.log("hitted wall");
             // a explode vfx
             let emitter = this.praticle_mngr.createEmitter({
@@ -534,7 +562,9 @@ export class GameScene extends Phaser.Scene {
         this.teams.forEach((team, index) => {
             if (shooter.info.team != index) {
                 // use overlap to avoid bullet pushing the hitted player
-                this.physics.add.overlap(bullet, team, (bullet: Bullet, player: Player) => {
+                this.physics.add.overlap(
+                    bullet, team, 
+                    (bullet: Bullet, player: Player) => {
                     console.log(this.one_info.name, "hitted player", player.info.name);
                     // a explode vfx
                     let emitter = this.praticle_mngr.createEmitter({

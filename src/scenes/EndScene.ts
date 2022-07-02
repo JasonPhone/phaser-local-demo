@@ -3,7 +3,7 @@ import bg from "../assets/images/bluebg.png";
 
 export class EndScene extends Phaser.Scene {
     private exit_text: Phaser.GameObjects.Text;
-    private restart_text: Phaser.GameObjects.Text;
+    // private restart_text: Phaser.GameObjects.Text;
     private nm: string;
     private win: boolean;
     private choose: number = -1;
@@ -33,23 +33,17 @@ export class EndScene extends Phaser.Scene {
             {
                 fontFamily: "宋体", fontSize: "60px"
             });
-        // this.restart_text = this.add.text(220, 330, "重新开始",
-        //     {
-        //         fontFamily: "宋体",
-        //         fontSize: "30px",
-        //     }).setInteractive();
         this.exit_text = this.add.text(370, 330, "退出",
             {
                 fontFamily: "宋体",
                 fontSize: "30px",
             }).setInteractive();
         this.click_events(this.exit_text, 0);
-        // this.click_events(this.restart_text, 1);
     }
     goto_gamescene() {
         if (this.choose === 1) {
             // goto welcome scene
-            this.scene.start("WelcomeScene", { name: this.nm });
+            // this.scene.start("WelcomeScene", { name: this.nm });
         } else if (this.choose === 0) {
             // goto login scene
             history.go(0);

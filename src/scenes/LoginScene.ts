@@ -39,9 +39,17 @@ export class LoginScene extends Phaser.Scene {
             if (event.target.name === 'toRegister') {
                 loginformElement.setVisible(false);
                 registerformElement.setVisible(true);
-                this.scene.tweens.add({ targets: registerformElement.rotate3d, x: 1, w: 360, duration: 1200, ease: 'Power3' });
+                this.scene.tweens.add(
+                    {
+                        targets: registerformElement.rotate3d,
+                        x: 1, w: 360, duration: 1200, ease: 'Power3'
+                    });
                 startText.setText('注册账号');
-                this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
+                this.scene.tweens.add(
+                    {
+                        targets: startText, alpha: 0.1,
+                        duration: 200, ease: 'Power3', yoyo: true
+                    });
             }
 
             // login
@@ -75,7 +83,7 @@ export class LoginScene extends Phaser.Scene {
                     data: JSON.stringify(data),
                     success: function (result: any) {//后台返回result
                         if (result.status == 2) { // Login Success
-                            self.scene.start("WelcomeScene", {name: inputUsername});
+                            self.scene.start("WelcomeScene", { name: inputUsername });
                             return;
                         } else if (result.status == 1) { // Login Password Not Correct
                             alert("账号与密码不匹配，请重新输入！");
@@ -94,24 +102,26 @@ export class LoginScene extends Phaser.Scene {
                     }
                 });
             }
-        }
-
-        );
-
+        });
         // registerformElement
         registerformElement.addListener('click');
-
         registerformElement.on('click', function (event: any) {
-
             // switch to login
             if (event.target.name === 'toLogin') {
                 registerformElement.setVisible(false);
                 loginformElement.setVisible(true);
-                this.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 1200, ease: 'Power3' });
+                this.scene.tweens.add(
+                    {
+                        targets: loginformElement.rotate3d,
+                        x: -1, w: 360, duration: 1200, ease: 'Power3'
+                    });
                 startText.setText('请登录');
-                this.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
+                this.scene.tweens.add(
+                    {
+                        targets: startText, alpha: 0.1,
+                        duration: 200, ease: 'Power3', yoyo: true
+                    });
             }
-
             // register
             if (event.target.name === 'registerButton') {
                 var inputUsername = this.getChildByName('username').value;
@@ -157,9 +167,17 @@ export class LoginScene extends Phaser.Scene {
                             alert("账号注册成功！");
                             registerformElement.setVisible(false);
                             loginformElement.setVisible(true);
-                            registerSelf.scene.tweens.add({ targets: loginformElement.rotate3d, x: -1, w: 360, duration: 1200, ease: 'Power3' });
+                            registerSelf.scene.tweens.add(
+                                {
+                                    targets: loginformElement.rotate3d,
+                                    x: -1, w: 360, duration: 1200, ease: 'Power3'
+                                });
                             startText.setText('Please Login to Play');
-                            registerSelf.scene.tweens.add({ targets: startText, alpha: 0.1, duration: 200, ease: 'Power3', yoyo: true });
+                            registerSelf.scene.tweens.add(
+                                {
+                                    targets: startText, alpha: 0.1,
+                                    duration: 200, ease: 'Power3', yoyo: true
+                                });
                             return;
                         } else if (result.status == 1) { // Register Name Existed
                             alert("账号已注册，请重新输入！");
@@ -175,9 +193,7 @@ export class LoginScene extends Phaser.Scene {
                     }
                 });
             }
-
         });
-
         // Login box appear effect
         this.tweens.add({
             targets: loginformElement,

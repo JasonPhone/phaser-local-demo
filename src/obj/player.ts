@@ -24,7 +24,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         down: false,
         space: false,
     }
-    constructor(info: { name: string, role: RoleType, team: number }, data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
+    constructor(
+        info: { name: string, role: RoleType, team: number },
+        data: { scene: Phaser.Scene, x: number, y: number, texture: string | Phaser.Textures.Texture }) {
         const { scene, x, y, texture } = data;
         super(scene, x, y, texture);
         // this.scene is set in super()
@@ -48,7 +50,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     skill() {
         if (this.skill_CD > 0) return;
         this.skill_CD = 10 * 1000;
-        this.scene.events.emit("skill", {player: this.info});
+        this.scene.events.emit("skill", { player: this.info });
         switch (this.info.role) {
             case RoleType.ADC:
                 /*
@@ -85,7 +87,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.health.lose(dmg);
         if (this.health.health <= 0) {
             this.setPosition(-100, -100);
-            this.scene.events.emit("kill", { killer: bullet.player, victim: this.info.name});
+            this.scene.events.emit("kill", { killer: bullet.player, victim: this.info.name });
         }
     }
     rotate_to(x: number, y: number) {
@@ -148,7 +150,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         this.skill_CD = 0;
         // console.log("Player::init_property: name", this.info.name);
         this.name_text = this.scene.add.text(this.x - 40, this.y + 40, this.info.name.substring(0, 8));
-        this.name_text.setFontFamily('Arial').setFontSize(20).setColor("#ffffff").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
+        this.name_text.setFontFamily('Arial').setFontSize(20);
+        this.name_text.setColor("#ffffff").setPadding({ left: 5, right: 5 }).setBackgroundColor("#333333");
         switch (this.info.role) {
             case RoleType.ADC:
                 /*
